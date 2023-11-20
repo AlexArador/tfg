@@ -4,7 +4,7 @@ Repositorio para el código del trabajo de final de grado de Ciencias de Datos A
 **Autor**: Alejandro Arador Triano
 
 
-**Entidad**: Universitat Oberta de Catalunya (UOC)
+![Logo UOC](img/logo_uoc.jpg)
 
 
 **Q1 23/24**
