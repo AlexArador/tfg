@@ -1,0 +1,19 @@
+Tamaño coche f1
+Relación tamaño circuito
+
+Coronarme
+	- Elevaciones
+	- Pianos
+
+Tiempo por vuelta
+Aceleración
+orque
+Frenada
+Fuerza centripeta
+Fricción con el suelo
+fuerza y dirección del viento
+
+Para cada circuito:
+	- Coordenadas de salida
+	- Orientación de salida
+	- Mapa b/n de cada circuito
