@@ -3,6 +3,7 @@
 
 from car import Car
 from racing_line import RacingLine
+from circuit import Circuit,Goal
 
 import math
 import random
@@ -13,10 +14,13 @@ import neat
 import pygame
 import cv2
 
+FPS = 60
+
 # MAP2
 START_POSITION = [830, 920]
 START_POSITION2 = [831, 920]
-CIRCUIT = 'map2.png'
+CIRCUIT = 'map2'
+CIRCUIT_EXTENSION = 'png'
 
 # SILVERSTONE
 #START_POSITION = [1258, 1054]
@@ -27,7 +31,7 @@ CIRCUIT = 'map2.png'
 #START_POSITION = [570, 179]
 #START_POSITION2 = [615, 171]
 
-im = cv2.imread(CIRCUIT)
+im = cv2.imread(f'{CIRCUIT}.{CIRCUIT_EXTENSION}')
 HEIGHT, WIDTH, CHANNEL = im.shape
 SP_X = START_POSITION[0]
 SP_Y = START_POSITION[1]
@@ -51,6 +55,7 @@ print(f'Angle: {ANGLE}')
 current_generation = 0 # Generation counter
 
 def run_simulation(genomes, config):
+    circuit = Circuit(CIRCUIT, CIRCUIT_EXTENSION)
     
     # Empty Collections For Nets and Cars
     nets = []
@@ -66,14 +71,17 @@ def run_simulation(genomes, config):
         nets.append(net)
         g.fitness = 0
 
-        cars.append(Car(CAR_SIZE_X, CAR_SIZE_Y, START_POSITION[0], START_POSITION[1], ANGLE, WIDTH))
+        cars.append(Car(CAR_SIZE_X, CAR_SIZE_Y, START_POSITION[0], START_POSITION[1], ANGLE, WIDTH, circuit.goals))
 
     # Clock Settings
     # Font Settings & Loading Map
     clock = pygame.time.Clock()
     generation_font = pygame.font.SysFont("Arial", 30)
     alive_font = pygame.font.SysFont("Arial", 20)
-    game_map = pygame.image.load(CIRCUIT).convert() # Convert Speeds Up A Lot
+    
+    game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
+    for goal in circuit.goals:
+        pygame.draw.line(game_map, goal.get_color(), goal.p1, goal.p2, goal.width)
 
     global current_generation
     current_generation += 1
@@ -92,15 +100,7 @@ def run_simulation(genomes, config):
         for i, car in enumerate(cars):
             output = nets[i].activate(car.get_data())
             choice = output.index(max(output))
-            if choice == 0:
-                car.angle += 15 # Left
-            elif choice == 1:
-                car.angle -= 15 # Right
-            elif choice == 2:
-                if (car.speed - 2 >= 12):
-                    car.speed -= 4 # Slow Down
-            else:
-                car.speed += 1 # Speed Up
+            car.action(choice)
 
         # Check If Car Is Still Alive
         # Increase Fitness If Yes And Break Loop If Not
@@ -118,7 +118,8 @@ def run_simulation(genomes, config):
             break
 
         counter += 1
-        if counter == 30 * 40: # Stop After About 20 Seconds
+        if counter == FPS * 20: # Stop After About 20 Seconds
+            racing_line.dump()
             break
 
         # Draw Map And All Cars That Are Alive
@@ -139,7 +140,7 @@ def run_simulation(genomes, config):
         screen.blit(text, text_rect)
 
         pygame.display.flip()
-        clock.tick(60) # 60 FPS
+        clock.tick(FPS)
 
 if __name__ == "__main__":
     

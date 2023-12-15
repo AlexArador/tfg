@@ -2,6 +2,7 @@ import math
 import pygame
 
 from racing_line import RacingLine
+from circuit import Goal
 
 BORDER_COLOR = (255, 255, 255, 255) # Color To Crash on Hit
 FPS = 60
@@ -20,12 +21,14 @@ class Car:
     acceleration = 0
     top_speed = 35
 
-    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width) -> None:
+    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals, red = False) -> None:
         self.size_x = size_x
         self.size_y = size_y
         self.width = width
 
-        self.sprite = pygame.image.load('car.png').convert()
+        sprite = 'red_car.png' if red else 'car.png'
+
+        self.sprite = pygame.image.load(sprite).convert()
         self.sprite = pygame.transform.scale(self.sprite, (size_x, size_y))
         self.rotated_sprite = self.sprite
 
@@ -51,6 +54,33 @@ class Car:
         self.conversion_rate = self._conversion_rate()
         
         self.racing_data = []
+        self.goals = goals
+        #self.active_goal = [x for x in goals if x.is_active()][0]
+        for i,g in enumerate(self.goals):
+            if g.is_active():
+                self.active_goal = g
+                self.active_goal_index = i
+        #self.active_goal.print_goal()
+
+    def action(self, choice):
+        if choice == 0:
+            self.angle += 15 # Left
+        elif choice == 1:
+            self.angle -= 15 # Right
+        elif choice == 2:
+            if (self.speed - 2 >= 12):
+                self.speed -= 4 # Slow Down
+        else:
+            self.speed += 1 # Speed Up
+
+    def get_next_goal(self):
+        if len(self.goals) - 1 == self.active_goal_index:
+            self.active_goal_index = 0
+        else:
+            self.active_goal_index += 1
+
+        for i,g in self.goals:
+            g.switch_to(i == self.active_goal_index)
 
     def _conversion_rate(self):
         return self.length_m / self.length_px
@@ -90,19 +120,14 @@ class Car:
 
     def update(self, game_map):
         if not self.speed_set:
-            #self.speed = self._accelerate()
             self.speed = 20
             self.speed_set = True
-        #elif self.speed <= self.top_speed:
-            #self.speed += self._accelerate()
-        #else:
-            #self.speed -= self._accelerate(False)
 
         # Get Rotated Sprite And Move Into The Right X-Direction
         # Don't Let The Car Go Closer Than 20px To The Edge
         self.rotated_sprite = self.rotate_center(self.sprite, self.angle)
         self.position[0] += math.cos(math.radians(360 - self.angle)) * self.speed
-        self.position[0] = max(self.position[0], 5) # GAZAPO
+        self.position[0] = max(self.position[0], 20)
         self.position[0] = min(self.position[0], self.width - 120)
 
         # Increase Distance and Time
@@ -111,13 +136,18 @@ class Car:
 
         # Same For Y-Position
         self.position[1] += math.sin(math.radians(360 - self.angle)) * self.speed
-        self.position[1] = max(self.position[1], 5) # GAZAPO
+        self.position[1] = max(self.position[1], 20)
         self.position[1] = min(self.position[1], self.width - 120)
         
         self.racing_data.append([self.position[0], self.position[1]])
 
         # Calculate New Center
         self.center = [int(self.position[0]) + self.size_x / 2, int(self.position[1]) + self.size_y / 2]
+
+        has_crossed = self.active_goal.has_crossed(self.center)
+        if has_crossed:
+            self.get_next_goal()
+            print('CAR HAS CROSSED THE GOAL!!')
 
         # Calculate Four Corners
         # Length Is Half The Side
