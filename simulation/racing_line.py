@@ -8,7 +8,7 @@ class RacingLine:
     
     def get_data(self, car, racing_line):
         if car not in self.cars:
-            df = pd.DataFrame([[car, racing_line]], columns=['car', 'racing_line'])            
+            df = pd.DataFrame([[car, racing_line]], columns=['car', 'racing_line'])
             
             self.df = pd.concat([self.df, df])            
             self.cars = set(self.df['car'].tolist())

@@ -12,6 +12,7 @@ LENGTH_PX = 6423
 
 class Car:
 
+
     mass = 700 # kg
     power = 350000 # w
     width = 2 # m
@@ -21,14 +22,12 @@ class Car:
     acceleration = 0
     top_speed = 35
 
-    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals, red = False) -> None:
+    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals) -> None:
         self.size_x = size_x
         self.size_y = size_y
         self.width = width
 
-        sprite = 'red_car.png' if red else 'car.png'
-
-        self.sprite = pygame.image.load(sprite).convert()
+        self.sprite = pygame.image.load('car.png').convert()
         self.sprite = pygame.transform.scale(self.sprite, (size_x, size_y))
         self.rotated_sprite = self.sprite
 
@@ -55,12 +54,8 @@ class Car:
         
         self.racing_data = []
         self.goals = goals
-        #self.active_goal = [x for x in goals if x.is_active()][0]
-        for i,g in enumerate(self.goals):
-            if g.is_active():
-                self.active_goal = g
-                self.active_goal_index = i
-        #self.active_goal.print_goal()
+        self.active_goal = [x for x in goals if x.active][0]
+        self.active_goal_index = 0
 
     def action(self, choice):
         if choice == 0:
@@ -78,9 +73,13 @@ class Car:
             self.active_goal_index = 0
         else:
             self.active_goal_index += 1
+            
+        print(f'Now active goal index: {self.active_goal_index}')
 
-        for i,g in self.goals:
+        for i,g in enumerate(self.goals):
             g.switch_to(i == self.active_goal_index)
+            
+        self.active_goal = self.goals[self.active_goal_index]
 
     def _conversion_rate(self):
         return self.length_m / self.length_px

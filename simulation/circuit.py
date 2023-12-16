@@ -37,11 +37,8 @@ class Goal:
             var_y = self.p2[1] - self.p1[1]
             return -1 * var_y / var_x
         
-    def is_active(self):
-        return self.is_active
-        
     def has_crossed(self, p):
-        margin = 25 # pixels
+        margin = 15 # pixels
         px = p[0]
         py = p[1]
         

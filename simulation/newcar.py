@@ -38,8 +38,8 @@ SP_Y = START_POSITION[1]
 
 #RUSSIA
 
-CAR_SIZE_X = 30
-CAR_SIZE_Y = 30
+CAR_SIZE_X = 60
+CAR_SIZE_Y = 60
 
 def calculate_angle(point1, point2):
     x = point2[0] - point1[0]
