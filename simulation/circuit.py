@@ -10,7 +10,7 @@ class Goal:
     def __init__(self, p1, p2, active = False) -> None:
         self.p1 = p1
         self.p2 = p2
-        self.active = active
+        self._active = active
         self.m = self.get_m()
 
         self.upper_limit_x = self.p1[0] if self.p1[0] > self.p2[0] else self.p2[0]
@@ -22,13 +22,13 @@ class Goal:
         self.is_vertical = self.m is None
 
     def print_goal(self):
-        print(f'Pendiente: {self.m}. Plana: {self.is_flat}. Vertical: {self.is_vertical}')
-        print(f'Lower X: {self.lower_limit_x}. Upper X: {self.upper_limit_x}')
-        print(f'Lower Y: {self.lower_limit_y}. Upper Y: {self.upper_limit_y}')
+        print(f'Línea: {self.get_line()}. Activa: {self._active}')
+        #print(f'Lower X: {self.lower_limit_x}. Upper X: {self.upper_limit_x}')
+        #print(f'Lower Y: {self.lower_limit_y}. Upper Y: {self.upper_limit_y}')
 
     def get_color(self):
-        return self.red if self.active else self.green
-    
+        return self.red if self._active else self.green
+
     def get_m(self):
         var_x = self.p2[0] - self.p1[0]
         if var_x == 0:
@@ -36,28 +36,15 @@ class Goal:
         else:
             var_y = self.p2[1] - self.p1[1]
             return -1 * var_y / var_x
-        
-    def has_crossed(self, p):
-        margin = 15 # pixels
-        px = p[0]
-        py = p[1]
-        
-        if self.is_vertical:
-            if py >= self.lower_limit_y and py <= self.upper_limit_y:
-                return px >= self.p1[0] - margin and px <= self.p1[0] + margin
-            else:
-                return False
-        elif self.is_flat:
-            if px >= self.lower_limit_x and px <= self.upper_limit_x:
-                return py >= self.p1[1] - margin and py <= self.p1[1] + margin
-            else:
-                return False
-        else:
-            if px >= self.lower_limit_x and px >= self.upper_limit_x and py >= self.lower_limit_y and py <= self.upper_limit_y:
-                return py >= self.m * px - margin and py <= self.m * px + margin
-            
+
     def switch_to(self, to):
-        self.is_active = to
+        self._active = to
+        
+    def get_line(self):
+        return (self.p1, self.p2)
+        
+    def is_active(self):
+        return self._active
 
 class Circuit:
     goals_file = 'goals.json'
@@ -73,6 +60,8 @@ class Circuit:
     def _load_goals(self):
         with open(self.goals_file, 'r') as file:
             data = json.load(file)
+            
+            file.close()
 
         goals = data[self.name]['goals']
         for i,goal in enumerate(goals):

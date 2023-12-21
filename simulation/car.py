@@ -12,7 +12,6 @@ LENGTH_PX = 6423
 
 class Car:
 
-
     mass = 700 # kg
     power = 350000 # w
     width = 2 # m
@@ -37,7 +36,7 @@ class Car:
 
         self.speed_set = False # Flag For Default Speed Later on
 
-        self.center = [self.position[0] + size_x / 2, self.position[1] + size_y / 2] # Calculate Center
+        self.center = [self.position[0] + self.size_x / 2, self.position[1] + self.size_y / 2] # Calculate Center
 
         self.radars = [] # List For Sensors / Radars
         self.drawing_radars = [] # Radars To Be Drawn
@@ -51,11 +50,13 @@ class Car:
         self.length_px = LENGTH_PX
 
         self.conversion_rate = self._conversion_rate()
-        
+
         self.racing_data = []
         self.goals = goals
-        self.active_goal = [x for x in goals if x.active][0]
+        self.active_goal = [x for x in goals if x.is_active()][0]
         self.active_goal_index = 0
+        #self.car_rect = pygame.Rect(self.position[0], self.position[1], self.size_x, self.size_y)
+        self.n_goals = len(self.goals)
 
     def action(self, choice):
         if choice == 0:
@@ -67,19 +68,6 @@ class Car:
                 self.speed -= 4 # Slow Down
         else:
             self.speed += 1 # Speed Up
-
-    def get_next_goal(self):
-        if len(self.goals) - 1 == self.active_goal_index:
-            self.active_goal_index = 0
-        else:
-            self.active_goal_index += 1
-            
-        print(f'Now active goal index: {self.active_goal_index}')
-
-        for i,g in enumerate(self.goals):
-            g.switch_to(i == self.active_goal_index)
-            
-        self.active_goal = self.goals[self.active_goal_index]
 
     def _conversion_rate(self):
         return self.length_m / self.length_px
@@ -116,6 +104,28 @@ class Car:
         # Calculate Distance To Border And Append To Radars List
         dist = int(math.sqrt(math.pow(x - self.center[0], 2) + math.pow(y - self.center[1], 2)))
         self.radars.append([(x, y), dist])
+        
+    def activate_next(self):
+        if self.active_goal_index == self.n_goals - 1:
+            self.active_goal_index = 0
+        else:
+            self.active_goal_index += 1
+            
+        print(f'Now active goal: {self.active_goal_index}')
+            
+        for i,g in enumerate(self.goals):
+            g.switch_to(i == self.active_goal_index)
+            
+        self.active_goal = [x for x in self.goals if x.is_active()][0]
+        self.active_goal.print_goal()
+    
+    def has_crossed(self):
+        #has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
+        has_crossed = any(self.sprite.get_rect().clipline(self.active_goal.get_line()))
+        if has_crossed:
+            self.activate_next()
+            #draw_goals()
+        return has_crossed
 
     def update(self, game_map):
         if not self.speed_set:
@@ -143,9 +153,9 @@ class Car:
         # Calculate New Center
         self.center = [int(self.position[0]) + self.size_x / 2, int(self.position[1]) + self.size_y / 2]
 
-        has_crossed = self.active_goal.has_crossed(self.center)
+        has_crossed = self.has_crossed()
         if has_crossed:
-            self.get_next_goal()
+            #self.get_next_goal()
             print('CAR HAS CROSSED THE GOAL!!')
 
         # Calculate Four Corners
