@@ -1,6 +1,8 @@
 import json
 import cv2
 import numpy as np
+import pygame
+import math
 
 class Goal:
     red = (255, 0, 0)
@@ -13,18 +15,22 @@ class Goal:
         self._active = active
         self.m = self.get_m()
 
-        self.upper_limit_x = self.p1[0] if self.p1[0] > self.p2[0] else self.p2[0]
-        self.lower_limit_x = self.p2[0] if self.p1[0] > self.p2[0] else self.p1[0]
-        self.upper_limit_y = self.p1[1] if self.p1[1] > self.p2[1] else self.p2[1]
-        self.lower_limit_y = self.p2[1] if self.p1[1] > self.p2[1] else self.p1[1]
+        #self.upper_limit_x = self.p1[0] if self.p1[0] > self.p2[0] else self.p2[0]
+        #self.lower_limit_x = self.p2[0] if self.p1[0] > self.p2[0] else self.p1[0]
+        #self.upper_limit_y = self.p1[1] if self.p1[1] > self.p2[1] else self.p2[1]
+        #self.lower_limit_y = self.p2[1] if self.p1[1] > self.p2[1] else self.p1[1]
 
-        self.is_flat = self.upper_limit_y == self.lower_limit_y
-        self.is_vertical = self.m is None
+        #self.is_flat = self.upper_limit_y == self.lower_limit_y
+        #self.is_vertical = self.m is None
 
     def print_goal(self):
         print(f'Línea: {self.get_line()}. Activa: {self._active}')
         #print(f'Lower X: {self.lower_limit_x}. Upper X: {self.upper_limit_x}')
         #print(f'Lower Y: {self.lower_limit_y}. Upper Y: {self.upper_limit_y}')
+
+    def draw_goal(self, game_map):
+        pygame.draw.line(game_map, self.get_color(), self.p1, self.p2, self.width)
+        #self.mask = pygame.mask.from_surface(self.image)
 
     def get_color(self):
         return self.red if self._active else self.green
@@ -57,6 +63,8 @@ class Circuit:
         self.goals = []
         self._load_goals()
 
+        self.start_position, self.start_angle = self._load_start()
+
     def _load_goals(self):
         with open(self.goals_file, 'r') as file:
             data = json.load(file)
@@ -66,6 +74,18 @@ class Circuit:
         goals = data[self.name]['goals']
         for i,goal in enumerate(goals):
             self.goals.append(Goal(goal['p1'], goal['p2'], i == 0))
+
+    def _load_start(self):
+        with open(self.goals_file, 'r') as file:
+            data = json.load(file)
+            file.close()
+
+        start = data[self.name]['start']
+        start1 = start['start1']
+        start2 = start['start2']
+
+        return start1, Circuit.calculate_angle(start1, start2)
+
 
     def get_chord(self):
         imagen = cv2.imread(self.file, cv2.IMREAD_GRAYSCALE)
@@ -79,4 +99,14 @@ class Circuit:
 
         return longitud_pixeles
     
-c = Circuit('map2', 'png')
+    def get_startposition(self):
+        return self.start_position
+
+    @staticmethod
+    def calculate_angle(point1, point2):
+        x = point2[0] - point1[0]
+        y = point1[1] - point2[1]
+
+        h = math.sqrt(math.pow(x, 2) + math.pow(y, 2))
+        cos = x / h
+        return math.degrees(math.acos(cos))

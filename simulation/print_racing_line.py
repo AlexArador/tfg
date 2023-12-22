@@ -1,8 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
+import os
 
-df = pd.read_csv('gen4.csv')
+data_folder = 'racing_line'
+generation = 69
+
+df = pd.read_csv(os.path.join(data_folder, f'gen{generation}.csv'))
 df['racing_line'] = df['racing_line'].apply(lambda x: eval(x))
 
 df['len'] = df.apply(lambda x: len(x['racing_line']), axis=1)
@@ -10,7 +14,6 @@ df = df.sort_values(by=['len'], ascending=False)
 print(df.iloc[0])
 
 longest_car_path = df.iloc[0]['car']
-#longest_car_path = 26
 
 # map2.png 1920 10180
 

@@ -7,7 +7,7 @@ Coronarme
 
 Tiempo por vuelta
 Aceleración
-orque
+Torque
 Frenada
 Fuerza centripeta
 Fricción con el suelo

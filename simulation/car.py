@@ -1,11 +1,12 @@
 import math
 import pygame
 
-from racing_line import RacingLine
+from racing_data import DataPoint
 from circuit import Goal
 
 BORDER_COLOR = (255, 255, 255, 255) # Color To Crash on Hit
 FPS = 60
+CAR_SPRITE = 'car.png'
 
 LENGTH_M = 5891
 LENGTH_PX = 6423
@@ -21,12 +22,12 @@ class Car:
     acceleration = 0
     top_speed = 35
 
-    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals) -> None:
+    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals: list[Goal]) -> None:
         self.size_x = size_x
         self.size_y = size_y
         self.width = width
 
-        self.sprite = pygame.image.load('car.png').convert()
+        self.sprite = pygame.image.load(CAR_SPRITE).convert_alpha()
         self.sprite = pygame.transform.scale(self.sprite, (size_x, size_y))
         self.rotated_sprite = self.sprite
 
@@ -55,7 +56,7 @@ class Car:
         self.goals = goals
         self.active_goal = [x for x in goals if x.is_active()][0]
         self.active_goal_index = 0
-        #self.car_rect = pygame.Rect(self.position[0], self.position[1], self.size_x, self.size_y)
+        self.car_rect = self.sprite.get_rect()
         self.n_goals = len(self.goals)
 
     def action(self, choice):
@@ -111,33 +112,26 @@ class Car:
         else:
             self.active_goal_index += 1
             
-        print(f'Now active goal: {self.active_goal_index}')
-            
         for i,g in enumerate(self.goals):
             g.switch_to(i == self.active_goal_index)
             
         self.active_goal = [x for x in self.goals if x.is_active()][0]
-        self.active_goal.print_goal()
     
     def has_crossed(self):
-        #has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
-        has_crossed = any(self.sprite.get_rect().clipline(self.active_goal.get_line()))
+        has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
+        #print(self.car_rect)
         if has_crossed:
             self.activate_next()
-            #draw_goals()
         return has_crossed
 
-    def update(self, game_map):
-        if not self.speed_set:
-            self.speed = 20
-            self.speed_set = True
-
+    def move(self):
         # Get Rotated Sprite And Move Into The Right X-Direction
         # Don't Let The Car Go Closer Than 20px To The Edge
         self.rotated_sprite = self.rotate_center(self.sprite, self.angle)
         self.position[0] += math.cos(math.radians(360 - self.angle)) * self.speed
         self.position[0] = max(self.position[0], 20)
         self.position[0] = min(self.position[0], self.width - 120)
+        self.car_rect.x = self.position[0]
 
         # Increase Distance and Time
         self.distance += self.speed
@@ -147,16 +141,10 @@ class Car:
         self.position[1] += math.sin(math.radians(360 - self.angle)) * self.speed
         self.position[1] = max(self.position[1], 20)
         self.position[1] = min(self.position[1], self.width - 120)
-        
-        self.racing_data.append([self.position[0], self.position[1]])
+        self.car_rect.y = self.position[1]
 
         # Calculate New Center
         self.center = [int(self.position[0]) + self.size_x / 2, int(self.position[1]) + self.size_y / 2]
-
-        has_crossed = self.has_crossed()
-        if has_crossed:
-            #self.get_next_goal()
-            print('CAR HAS CROSSED THE GOAL!!')
 
         # Calculate Four Corners
         # Length Is Half The Side
@@ -166,6 +154,19 @@ class Car:
         left_bottom = [self.center[0] + math.cos(math.radians(360 - (self.angle + 210))) * length, self.center[1] + math.sin(math.radians(360 - (self.angle + 210))) * length]
         right_bottom = [self.center[0] + math.cos(math.radians(360 - (self.angle + 330))) * length, self.center[1] + math.sin(math.radians(360 - (self.angle + 330))) * length]
         self.corners = [left_top, right_top, left_bottom, right_bottom]
+    
+    def update(self, game_map, choice):
+        if not self.speed_set:
+            self.speed = 20
+            self.speed_set = True
+
+        self.action(choice)
+        self.move()
+        self.has_crossed()
+
+        #self.racing_data.append([self.position[0], self.position[1]])
+        dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
+        self.racing_data.append(dp)
 
         # Check Collisions And Clear Radars
         self.check_collision(game_map)
@@ -195,8 +196,10 @@ class Car:
         rectangle = image.get_rect()
         rotated_image = pygame.transform.rotate(image, angle)
         rotated_rectangle = rectangle.copy()
+        #self.car_rect = rotated_image.get_rect()
         rotated_rectangle.center = rotated_image.get_rect().center
         rotated_image = rotated_image.subsurface(rotated_rectangle).copy()
+        
         return rotated_image
 
     def _accelerate(self, accelerate=True):
