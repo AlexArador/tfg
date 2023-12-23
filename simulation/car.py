@@ -11,24 +11,28 @@ CAR_SPRITE = 'car.png'
 LENGTH_M = 5891
 LENGTH_PX = 6423
 
-class Car:
+class Car: 
 
     mass = 700 # kg
     power = 350000 # w
-    width = 2 # m
-    length = 5.5 # m
+    width = 5 # m
+    length = 2 # m
     max_steering = 450 # degrees
 
     acceleration = 0
     top_speed = 35
 
-    def __init__(self, size_x, size_y, sp_x, sp_y, angle, width, goals: list[Goal]) -> None:
-        self.size_x = size_x
-        self.size_y = size_y
+    def __init__(self, sp_x, sp_y, angle, width, goals: list[Goal], prop) -> None:
+        self.prop = prop
+        self.size_x = self.length * self.prop
+        self.size_y = self.width * self.prop
+        #self.size_x = 60
+        #self.size_y = 30
+
         self.width = width
 
         self.sprite = pygame.image.load(CAR_SPRITE).convert_alpha()
-        self.sprite = pygame.transform.scale(self.sprite, (size_x, size_y))
+        self.sprite = pygame.transform.scale(self.sprite, (self.size_x, self.size_y))
         self.rotated_sprite = self.sprite
 
         self.position = [sp_x, sp_y]
@@ -58,6 +62,7 @@ class Car:
         self.active_goal_index = 0
         self.car_rect = self.sprite.get_rect()
         self.n_goals = len(self.goals)
+        self.goals_crossed = 0
 
     def action(self, choice):
         if choice == 0:
@@ -162,7 +167,9 @@ class Car:
 
         self.action(choice)
         self.move()
-        self.has_crossed()
+        has_crossed = self.has_crossed()
+        if has_crossed:
+            self.goals_crossed += 1
 
         #self.racing_data.append([self.position[0], self.position[1]])
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
@@ -189,17 +196,17 @@ class Car:
         return self.alive
 
     def get_reward(self):
-        return self.distance
+        #return self.distance
+        return self.distance * self.goals_crossed / self.n_goals
 
     def rotate_center(self, image, angle):
         # Rotate The Rectangle
         rectangle = image.get_rect()
         rotated_image = pygame.transform.rotate(image, angle)
         rotated_rectangle = rectangle.copy()
-        #self.car_rect = rotated_image.get_rect()
         rotated_rectangle.center = rotated_image.get_rect().center
-        rotated_image = rotated_image.subsurface(rotated_rectangle).copy()
-        
+        #rotated_image = rotated_image.subsurface(rotated_rectangle).copy()
+
         return rotated_image
 
     def _accelerate(self, accelerate=True):
@@ -210,5 +217,5 @@ class Car:
         speed = 1
         if self.speed != 0:
             speed = self.speed
-            
+
         return ((self.power / (self.mass * speed * FPS)) * self.conversion_rate * vector) / 10

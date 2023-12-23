@@ -12,16 +12,18 @@ import cv2
 
 FPS = 60
 
-# MAP2
-CIRCUIT = 'map2'
+CIRCUIT = 'silverstone'
+#CIRCUIT = 'map2'
 CIRCUIT_EXTENSION = 'png'
 
-# SILVERSTONE
-#START_POSITION = [1258, 1054]
-#START_POSITION2 = [1175, 998]
-#CIRCUIT = 'silverstone.png'
+circuit = Circuit(CIRCUIT, CIRCUIT_EXTENSION)
+circuit_chord = circuit.chord
+print(f'La cuerda del circuito es de {circuit_chord} píxeles')
+circuit_w, circuit_h = circuit.get_image_size()
+print(f'Las dimensiones de la imagen del circuito son {circuit_w}x{circuit_h}')
+print(f'La proporción de la imagen con la realidad del circuito es: {circuit.get_prop()}')
 
-#AFTER COPSE
+#SILVERSTONE AFTER COPSE
 #START_POSITION = [570, 179]
 #START_POSITION2 = [615, 171]
 
@@ -29,13 +31,13 @@ im = cv2.imread(f'{CIRCUIT}.{CIRCUIT_EXTENSION}')
 HEIGHT, WIDTH, CHANNEL = im.shape
 
 CAR_SIZE_X = 60
-CAR_SIZE_Y = 60
+CAR_SIZE_Y = 30
 
 current_generation = 0 # Generation counter
 
 def run_simulation(genomes, config):
-    circuit = Circuit(CIRCUIT, CIRCUIT_EXTENSION)
-    
+    global circuit
+
     # Empty Collections For Nets and Cars
     nets = []
     cars = []
@@ -50,7 +52,7 @@ def run_simulation(genomes, config):
         nets.append(net)
         g.fitness = 0
 
-        cars.append(Car(CAR_SIZE_X, CAR_SIZE_Y, circuit.start_position[0], circuit.start_position[1], circuit.start_angle, WIDTH, circuit.goals))
+        cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, WIDTH, circuit.goals, circuit.get_prop()))
 
     # Clock Settings
     # Font Settings & Loading Map

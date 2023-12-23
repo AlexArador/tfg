@@ -27,4 +27,5 @@ print(df.iloc[0]['racing_line'][0][4])
 racing_line = df['racing_line'][df['car'] == longest_car_path].tolist()
 racing_line = racing_line[0]
 
+print(racing_line[0])
 print(set([x[4] for x in racing_line]))

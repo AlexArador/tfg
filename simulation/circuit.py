@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import pygame
 import math
+from PIL import Image
 
 class Goal:
     red = (255, 0, 0)
@@ -29,7 +30,7 @@ class Goal:
         #print(f'Lower Y: {self.lower_limit_y}. Upper Y: {self.upper_limit_y}')
 
     def draw_goal(self, game_map):
-        pygame.draw.line(game_map, self.get_color(), self.p1, self.p2, self.width)
+        pygame.draw.line(game_map, 'green', self.p1, self.p2, self.width)
         #self.mask = pygame.mask.from_surface(self.image)
 
     def get_color(self):
@@ -61,6 +62,9 @@ class Circuit:
 
         self.file = f'{self.name}.{self.extension}'
         self.goals = []
+        
+        self.chord = self._get_chord()
+        self.length = 2400
         self._load_goals()
 
         self.start_position, self.start_angle = self._load_start()
@@ -86,8 +90,7 @@ class Circuit:
 
         return start1, Circuit.calculate_angle(start1, start2)
 
-
-    def get_chord(self):
+    def _get_chord(self):
         imagen = cv2.imread(self.file, cv2.IMREAD_GRAYSCALE)
         # Aplicar el algoritmo de detección de contornos (Canny)
         bordes = cv2.Canny(imagen, 50, 150)
@@ -97,10 +100,17 @@ class Circuit:
         cuerda_contorno = max(contornos, key=cv2.contourArea)
         longitud_pixeles = cv2.arcLength(cuerda_contorno, closed=True)
 
-        return longitud_pixeles
+        return int(round(longitud_pixeles, 0))
+    
+    def get_image_size(self):
+        with Image.open(self.file) as img:
+            return img.size
     
     def get_startposition(self):
         return self.start_position
+    
+    def get_prop(self):
+        return 1.0 * self.chord / self.length
 
     @staticmethod
     def calculate_angle(point1, point2):
