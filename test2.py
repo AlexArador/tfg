@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 import numpy as np
+import os
 
 import os
 import pandas as pd
 
-data_folder = 'racing_line'
+data_folder = os.path.join('data', 'racing_line')
 generation = 69
 
 csv = os.path.join(data_folder, f'gen{generation}.csv')

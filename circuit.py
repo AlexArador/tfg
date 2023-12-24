@@ -4,6 +4,7 @@ import numpy as np
 import pygame
 import math
 from PIL import Image
+import os
 
 class Goal:
     red = (255, 0, 0)
@@ -16,22 +17,11 @@ class Goal:
         self._active = active
         self.m = self.get_m()
 
-        #self.upper_limit_x = self.p1[0] if self.p1[0] > self.p2[0] else self.p2[0]
-        #self.lower_limit_x = self.p2[0] if self.p1[0] > self.p2[0] else self.p1[0]
-        #self.upper_limit_y = self.p1[1] if self.p1[1] > self.p2[1] else self.p2[1]
-        #self.lower_limit_y = self.p2[1] if self.p1[1] > self.p2[1] else self.p1[1]
-
-        #self.is_flat = self.upper_limit_y == self.lower_limit_y
-        #self.is_vertical = self.m is None
-
     def print_goal(self):
         print(f'Línea: {self.get_line()}. Activa: {self._active}')
-        #print(f'Lower X: {self.lower_limit_x}. Upper X: {self.upper_limit_x}')
-        #print(f'Lower Y: {self.lower_limit_y}. Upper Y: {self.upper_limit_y}')
 
     def draw_goal(self, game_map):
         pygame.draw.line(game_map, 'green', self.p1, self.p2, self.width)
-        #self.mask = pygame.mask.from_surface(self.image)
 
     def get_color(self):
         return self.red if self._active else self.green
@@ -54,7 +44,7 @@ class Goal:
         return self._active
 
 class Circuit:
-    goals_file = 'goals.json'
+    goals_file = os.path.join('data', 'circuits', 'goals.json')
 
     def __init__(self, name, extension) -> None:
         self.name = name

@@ -26,8 +26,6 @@ class Car:
         self.prop = prop
         self.size_x = self.length * self.prop
         self.size_y = self.width * self.prop
-        #self.size_x = 60
-        #self.size_y = 30
 
         self.width = width
 

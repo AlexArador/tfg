@@ -1,32 +1,38 @@
-import cv2
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import Normalize
 import numpy as np
 
-# Cargar la imagen original
-imagen_original = cv2.imread('circuito.jpg')
+# Generar datos de ejemplo
+x = np.linspace(0, 10, 50)
+y = np.sin(x)
 
-# Convertir la imagen a escala de grises
-imagen_gris = cv2.cvtColor(imagen_original, cv2.COLOR_BGR2GRAY)
+# Asignar colores específicos a los puntos
+colores = np.where(x < 5, 'red', 'blue')
 
-# Aplicar umbral para obtener una imagen binaria (blanco y negro)
-_, binaria = cv2.threshold(imagen_gris, 128, 255, cv2.THRESH_BINARY)
+# Crear un scatter plot con colores específicos para los puntos
+scatter = plt.scatter(x, y, c=colores)
 
-# Encontrar contornos
-contornos, _ = cv2.findContours(binaria, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+# Crear segmentos de línea entre puntos de diferentes colores
+segmentos = np.column_stack([x, y]).reshape(len(x), 1, 2)
+segmentos = np.concatenate([segmentos[:-1], segmentos[1:]], axis=1)
 
-# Seleccionar el contorno del circuito (suponemos el contorno más grande)
-contorno_circuito = max(contornos, key=cv2.contourArea)
+# Crear una LineCollection con un gradiente de color
+norm = plt.Normalize(0, len(x)-1)
+gradiente_linea = LineCollection(segmentos, cmap='RdYlGn', norm=norm)
+gradiente_linea.set_array(np.arange(len(x)-1))
 
-# Calcular la longitud del contorno
-longitud_contorno = cv2.arcLength(contorno_circuito, closed=True)
+# Añadir colorbar para mostrar el gradiente
+cbar = plt.colorbar(gradiente_linea, ticks=np.arange(len(x)))
+cbar.set_label('Segmentos de Línea')
 
-# Mostrar la longitud del contorno
-print(f"Longitud del contorno: {longitud_contorno}")
+# Configurar el aspecto del plot
+plt.title('Scatter Plot con Línea y Gradiente de Color')
+plt.xlabel('X')
+plt.ylabel('Y')
 
-# Dibujar el contorno en la imagen original
-cv2.drawContours(imagen_original, [contorno_circuito], -1, (0, 255, 0), 2)
+# Añadir la LineCollection al plot
+plt.gca().add_collection(gradiente_linea)
 
-# Mostrar y guardar la imagen con el contorno
-cv2.imshow('Contorno del Circuito', imagen_original)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-cv2.imwrite('imagen_con_contorno.jpg', imagen_original)
+# Mostrar el plot
+plt.show()

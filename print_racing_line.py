@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 
-data_folder = 'racing_line'
+data_folder = os.path.join('data', 'racing_line')
 generation = 150
 
 df = pd.read_csv(os.path.join(data_folder, f'gen{generation}.csv'))
@@ -29,4 +29,3 @@ plt.scatter(coordenadas_x, coordenadas_y, color='red', s=5)  # Puedes ajustar el
 
 # Mostrar la imagen con las coordenadas
 plt.show()
-

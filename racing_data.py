@@ -13,7 +13,7 @@ class DataPoint:
         return [self.x, self.y, self.speed, self.angle, self.action]   
 
 class RacingLine:
-    data_folder = 'racing_line'
+    data_folder = os.path.join('data', 'racing_line')
 
     def __init__(self, generation) -> None:
         self.generation = generation
