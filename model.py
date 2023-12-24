@@ -9,11 +9,12 @@ import sys
 import neat
 import pygame
 import cv2
+import pickle
+import os
 
 FPS = 60
 
 CIRCUIT = 'silverstone'
-#CIRCUIT = 'map2'
 CIRCUIT_EXTENSION = 'png'
 
 circuit = Circuit(CIRCUIT, CIRCUIT_EXTENSION)
@@ -23,20 +24,19 @@ circuit_w, circuit_h = circuit.get_image_size()
 print(f'Las dimensiones de la imagen del circuito son {circuit_w}x{circuit_h}')
 print(f'La proporción de la imagen con la realidad del circuito es: {circuit.get_prop()}')
 
-#SILVERSTONE AFTER COPSE
-#START_POSITION = [570, 179]
-#START_POSITION2 = [615, 171]
-
-im = cv2.imread(f'{CIRCUIT}.{CIRCUIT_EXTENSION}')
-HEIGHT, WIDTH, CHANNEL = im.shape
-
 CAR_SIZE_X = 60
 CAR_SIZE_Y = 30
 
 current_generation = 0 # Generation counter
 
+MODEL_PATH = 'models'
+model_n = len(os.listdir(MODEL_PATH)) + 1
+folder_name = f'model_{str(model_n)}'
+
 def run_simulation(genomes, config):
     global circuit
+    global folder_name
+    global current_generation
 
     # Empty Collections For Nets and Cars
     nets = []
@@ -44,7 +44,7 @@ def run_simulation(genomes, config):
 
     # Initialize PyGame And The Display
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((circuit_w, circuit_h), pygame.RESIZABLE)
 
     # For All Genomes Passed Create A New Neural Network
     for i, g in genomes:
@@ -52,7 +52,7 @@ def run_simulation(genomes, config):
         nets.append(net)
         g.fitness = 0
 
-        cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, WIDTH, circuit.goals, circuit.get_prop()))
+        cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
 
     # Clock Settings
     # Font Settings & Loading Map
@@ -60,11 +60,11 @@ def run_simulation(genomes, config):
     generation_font = pygame.font.SysFont("Arial", 30)
     alive_font = pygame.font.SysFont("Arial", 20)
     
+    print(f'Circuit file: {circuit.file}')
     game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
     for goal in circuit.goals:
         goal.draw_goal(game_map)
-
-    global current_generation
+    
     current_generation += 1
     racing_line = RacingLine(current_generation)
 
@@ -75,6 +75,8 @@ def run_simulation(genomes, config):
         # Exit On Quit Event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                sys.exit(0)
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 sys.exit(0)
 
         # Check If Car Is Still Alive
@@ -120,21 +122,30 @@ def run_simulation(genomes, config):
         pygame.display.flip()
         clock.tick(FPS)
 
+    if current_generation % 10 == 0:
+        with open(os.path.join(MODEL_PATH, folder_name, f'model_gen{current_generation}.pkl'), 'wb') as config_file:
+            print(f'Saving model of generation {current_generation} in')
+            pickle.dump(config, config_file)
+
+        #with open('neat_genome.pkl', 'wb') as genome_file:
+            #pickle.dump(genome, genome_file)
+
 if __name__ == "__main__":
-    
+    os.mkdir(os.path.join(MODEL_PATH, folder_name))
+
     # Load Config
-    config_path = "./config.txt"
+    CONFIG_PATH = "./config.txt"
     config = neat.config.Config(neat.DefaultGenome,
                                 neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet,
                                 neat.DefaultStagnation,
-                                config_path)
+                                CONFIG_PATH)
 
     # Create Population And Add Reporters
     population = neat.Population(config)
     population.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     population.add_reporter(stats)
-    
+
     # Run Simulation For A Maximum of 150 Generations
     population.run(run_simulation, 150)

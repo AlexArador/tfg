@@ -5,6 +5,7 @@ import pygame
 import math
 from PIL import Image
 import os
+import pandas as pd
 
 class Goal:
     red = (255, 0, 0)
@@ -36,23 +37,25 @@ class Goal:
 
     def switch_to(self, to):
         self._active = to
-        
+
     def get_line(self):
         return (self.p1, self.p2)
-        
+
     def is_active(self):
         return self._active
 
 class Circuit:
-    goals_file = os.path.join('data', 'circuits', 'goals.json')
 
     def __init__(self, name, extension) -> None:
+        self.data_folder = os.path.join('data', 'circuits')
+        self.goals_file = os.path.join(self.data_folder, 'circuits.json')
+        
         self.name = name
         self.extension = extension
 
-        self.file = f'{self.name}.{self.extension}'
+        self.file = os.path.join(self.data_folder, 'images', f'{self.name}.{self.extension}')
         self.goals = []
-        
+
         self.chord = self._get_chord()
         self.length = 2400
         self._load_goals()
@@ -60,9 +63,9 @@ class Circuit:
         self.start_position, self.start_angle = self._load_start()
 
     def _load_goals(self):
-        with open(self.goals_file, 'r') as file:
+        with open(self.goals_file, 'r', encoding='utf-8') as file:
             data = json.load(file)
-            
+ 
             file.close()
 
         goals = data[self.name]['goals']
@@ -91,14 +94,14 @@ class Circuit:
         longitud_pixeles = cv2.arcLength(cuerda_contorno, closed=True)
 
         return int(round(longitud_pixeles, 0))
-    
+
     def get_image_size(self):
         with Image.open(self.file) as img:
             return img.size
-    
+
     def get_startposition(self):
         return self.start_position
-    
+
     def get_prop(self):
         return 1.0 * self.chord / self.length
 
@@ -110,3 +113,19 @@ class Circuit:
         h = math.sqrt(math.pow(x, 2) + math.pow(y, 2))
         cos = x / h
         return math.degrees(math.acos(cos))
+
+    @staticmethod
+    def get_circuits():
+        data_path = 'data'
+
+        circuit_images = os.listdir(os.path.join(data_path, 'circuits', 'real'))
+        available_circuits = [c[:c.find('.')] for c in circuit_images]
+
+        df_circuits = pd.read_csv(os.path.join(data_path, 'raw', 'circuits.csv'))
+        df_circuits = df_circuits[df_circuits['circuitRef'].isin(available_circuits)]
+
+        print(f'Available circuits: {len(df_circuits)}')
+        print(f'Available images: {len(circuit_images)}')
+
+        df_circuits = df_circuits[['circuitId', 'circuitRef', 'name', 'country', 'lat', 'lng']]
+        df_circuits.to_csv(os.path.join(data_path, 'circuits', 'circuits.csv'), index=False, header=True)

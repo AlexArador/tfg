@@ -4,7 +4,7 @@ import pygame
 from racing_data import DataPoint
 from circuit import Goal
 
-BORDER_COLOR = (255, 255, 255, 255) # Color To Crash on Hit
+BORDER_COLOR = (255, 255, 255) # Color To Crash on Hit
 FPS = 60
 CAR_SPRITE = 'car.png'
 
@@ -26,7 +26,7 @@ class Car:
         self.prop = prop
         self.size_x = self.length * self.prop
         self.size_y = self.width * self.prop
-
+        
         self.width = width
 
         self.sprite = pygame.image.load(CAR_SPRITE).convert_alpha()

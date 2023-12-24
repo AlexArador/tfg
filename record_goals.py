@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 from PIL import Image
 
 # Inicializar Pygame
@@ -9,7 +10,7 @@ def get_image_size(self):
         with Image.open(self.file) as img:
             return img.size
         
-circuit = 'silverstone.png'
+circuit = os.path.join('data', 'circuits', 'images', 'silverstone.png')
 
 with Image.open(circuit) as img:
     ANCHO, ALTO = img.size
@@ -24,10 +25,6 @@ pygame.display.set_caption("Ejemplo de Click en Pygame")
 # Cargar una imagen
 imagen = pygame.image.load(circuit)
 imagen = pygame.transform.scale(imagen, (ANCHO, ALTO))
-
-# Función para imprimir la posición del clic
-def imprimir_posicion_clic(posicion):
-    print(f"Clic en la posición: {posicion}")
 
 # Bucle principal
 ejecutando = True
