@@ -34,7 +34,19 @@ model_n = len(os.listdir(MODEL_PATH)) + 1
 folder_name = f'model_{str(model_n)}'
 
 def run_game():
+    # Initialize PyGame And The Display
+    pygame.init()
+    screen = pygame.display.set_mode((circuit_w, circuit_h), pygame.RESIZABLE)
     
+    # Clock Settings
+    # Font Settings & Loading Map
+    clock = pygame.time.Clock()
+    generation_font = pygame.font.SysFont("Arial", 30)
+    alive_font = pygame.font.SysFont("Arial", 20)
+    
+    game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
+    for goal in circuit.goals:
+        goal.draw_goal(game_map)
 
 def run_simulation(genomes, config):
     global circuit
@@ -44,10 +56,8 @@ def run_simulation(genomes, config):
     # Empty Collections For Nets and Cars
     nets = []
     cars = []
-
-    # Initialize PyGame And The Display
-    pygame.init()
-    screen = pygame.display.set_mode((circuit_w, circuit_h), pygame.RESIZABLE)
+    
+    run_game()
 
     # For All Genomes Passed Create A New Neural Network
     for i, g in genomes:
@@ -56,17 +66,6 @@ def run_simulation(genomes, config):
         g.fitness = 0
 
         cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
-
-    # Clock Settings
-    # Font Settings & Loading Map
-    clock = pygame.time.Clock()
-    generation_font = pygame.font.SysFont("Arial", 30)
-    alive_font = pygame.font.SysFont("Arial", 20)
-    
-    print(f'Circuit file: {circuit.file}')
-    game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
-    for goal in circuit.goals:
-        goal.draw_goal(game_map)
 
     current_generation += 1
     racing_line = RacingLine(current_generation)
