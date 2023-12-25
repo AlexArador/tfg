@@ -33,7 +33,15 @@ MODEL_PATH = 'models'
 model_n = len(os.listdir(MODEL_PATH)) + 1
 folder_name = f'model_{str(model_n)}'
 
-def run_game():
+def run_simulation(genomes, config):
+    global circuit
+    global folder_name
+    global current_generation
+
+    # Empty Collections For Nets and Cars
+    nets = []
+    cars = []
+    
     # Initialize PyGame And The Display
     pygame.init()
     screen = pygame.display.set_mode((circuit_w, circuit_h), pygame.RESIZABLE)
@@ -47,17 +55,6 @@ def run_game():
     game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
     for goal in circuit.goals:
         goal.draw_goal(game_map)
-
-def run_simulation(genomes, config):
-    global circuit
-    global folder_name
-    global current_generation
-
-    # Empty Collections For Nets and Cars
-    nets = []
-    cars = []
-    
-    run_game()
 
     # For All Genomes Passed Create A New Neural Network
     for i, g in genomes:
