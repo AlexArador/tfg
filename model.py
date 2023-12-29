@@ -20,9 +20,6 @@ circuit_w, circuit_h = circuit.get_image_size()
 print(f'Las dimensiones de la imagen del circuito son {circuit_w}x{circuit_h}')
 print(f'La proporción de la imagen con la realidad del circuito es: {circuit.get_prop()}')
 
-CAR_SIZE_X = 60
-CAR_SIZE_Y = 30
-
 current_generation = 0 # Generation counter
 
 MODEL_PATH = 'models'
@@ -64,10 +61,6 @@ class Simulation:
             if still_alive == 0:
                 self.racing_line.dump()
                 break
-            
-            self.counter += 1
-            if self.counter == FPS * 20: # Stop After About 20 Seconds
-                self.racing_line.dump()
 
             # Draw Map And All Cars That Are Alive
             self.screen.blit(self.game_map, (0, 0))
@@ -89,8 +82,6 @@ class Simulation:
             pygame.display.flip()
             self.clock.tick(FPS)
 
-        #self.dump_model()
-
     def car_loop(self):
         still_alive = 0
         for i, car in enumerate(self.cars):
@@ -107,46 +98,28 @@ class Simulation:
         
         return still_alive
     
-def run(genome, config):
+def run(genomes, config):
     global circuit
-    global folder_name
-    global current_generation
-    
-    nets = []
-    cars = []
-    
-    simulation = Simulation(circuit, current_generation, genome, cars, nets, config)
-    
-    net = neat.nn.FeedForwardNetwork.create(genome, config)
-    nets.append(net)
-    cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
-        
-    current_generation += 1    
-    simulation.cars = cars
-    simulation.nets = nets
-    simulation.genomes = genome
-
-    simulation.main_loop()
-
-def train(genomes, config):
-    global circuit
-    global folder_name
     global current_generation
     
     nets = []
     cars = []
     
     simulation = Simulation(circuit, current_generation, genomes, cars, nets, config)
-    
-    for i, g in genomes:
-        net = neat.nn.FeedForwardNetwork.create(g, config)
+
+    if type(genomes) is list:
+        for i, g in genomes:
+            net = neat.nn.FeedForwardNetwork.create(g, config)
+            nets.append(net)
+            g.fitness = 0
+
+            cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
+    else:    
+        net = neat.nn.FeedForwardNetwork.create(genomes, config)
         nets.append(net)
-        g.fitness = 0
-
         cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
-
-    current_generation += 1
-    
+        
+    current_generation += 1    
     simulation.cars = cars
     simulation.nets = nets
     simulation.genomes = genomes
@@ -154,6 +127,8 @@ def train(genomes, config):
     simulation.main_loop()
 
 def execute(execution: str, config_path: str, checkpoint_prefix: str, model_n: int = 1, load_checkpoint: int = None, generations: int = 150, checkpoint: int = 10):
+    global current_generation
+    
     if execution not in ['new', 'restore', 'deploy']:
         print(f'Provided _execution_ value is not valid: {execution}')
         return
@@ -169,11 +144,12 @@ def execute(execution: str, config_path: str, checkpoint_prefix: str, model_n: i
                     return
             if execution == 'restore':
                 if os.path.exists(os.path.join(MODEL_PATH, f'model_{str(model_n)}')):
-                    if not os.path.exists(os.path.join(MODEL_PATH, f'model_path{str(model_n)}', checkpoint_prefix, load_checkpoint)):
+                    if not os.path.exists(os.path.join(MODEL_PATH, f'model_path{str(model_n)}', checkpoint_prefix, str(load_checkpoint))):
                         print(f'Selected checkpoint ({load_checkpoint}) to load does not exist')
                         checkpoints = os.listdir(os.path.join(MODEL_PATH, f'model_{str(model_n)}'))
-                        load_checkpoint = max([int(x.replace(checkpoint_prefix, '')) for x in checkpoints])
+                        load_checkpoint = max([int(x.replace(checkpoint_prefix, '')) for x in checkpoints if checkpoint_prefix in x])
                         print(f'New selected load checkpoint: {load_checkpoint}')
+                        current_generation = load_checkpoint
                 else:
                     print(f'Selected model does not exist')
                     return
@@ -209,7 +185,7 @@ def execute(execution: str, config_path: str, checkpoint_prefix: str, model_n: i
         population.add_reporter(stats)
         population.add_reporter(checkpointer)
 
-        population.run(train, generations)
+        population.run(run, generations)
 
         with open(os.path.join(model_folder, 'genome.pkl'), 'wb') as genome_file:
             pickle.dump(stats.best_genome(), genome_file)
@@ -229,13 +205,13 @@ if __name__ == "__main__":
     CONFIG_PATH = 'config.txt'
     CHECKPOINT_PREFIX = 'checkpoint-gen-'
 
-    generations = 20 # PARAMETRIZE
+    generations = 30 # PARAMETRIZE
     checkpoint = 5 # PARAMETRIZE
-    model_n = 1 # PARAMETRIZE
-    load_checkpoint = None # PARAMETRIZE
+    model_n = 6 # PARAMETRIZE
+    load_checkpoint = 19 # PARAMETRIZE
 
-    execution = 'new' # PARAMETRIZE
-    #execution = 'restore' # PARAMETRIZE
-    execution = 'deploy' # PARAMETRIZE
+    #execution = 'new' # PARAMETRIZE
+    execution = 'restore' # PARAMETRIZE
+    #execution = 'deploy' # PARAMETRIZE
 
     execute(execution, CONFIG_PATH, CHECKPOINT_PREFIX, model_n, load_checkpoint, generations, checkpoint)

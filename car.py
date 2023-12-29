@@ -63,24 +63,18 @@ class Car:
         self.goals_crossed = 0
 
     def action(self, choice):
-        if choice == 0:
-            self.angle += 15 # Left
-            print('Steer left')
-        elif choice == 1:
-            self.angle -= 15 # Right
-            print('Steer right')
-        elif choice == 2:
+        if choice == 0: # Steer Left
+            self.angle += 15
+        elif choice == 1: # Steer Right
+            self.angle -= 15
+        elif choice == 2: # Slow Down
             new_speed = self.get_speed_diff()
-            print(f'Slow down - {new_speed}')
-            self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
-            #if self.speed - new_speed > 0:
-                #self.speed -= 4 # Slow Down
-                #print('Slow down')
-        elif choice == 3:
-            #self.speed += 1 # Speed Up
+            #self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
+            self.speed = self.speed - 4 if self.speed - 4 > 0 else self.speed
+        elif choice == 3: # Speed Up
             new_speed = self.get_speed_diff()
-            print(f'Speed up - {new_speed}')
-            self.speed += new_speed
+            #self.speed += new_speed
+            self.speed += 1
 
     def _conversion_rate(self):
         return self.length_m / self.length_px
@@ -204,9 +198,9 @@ class Car:
         return self.alive
 
     def get_reward(self):
-        #return self.distance * self.goals_crossed / self.n_goals
+        return self.distance * self.goals_crossed / self.n_goals
         #return self.goals_crossed / self.n_goals
-        return self.goals_crossed / (self.n_goals * self.time)
+        #return self.goals_crossed / (self.n_goals * self.time)
 
     def rotate_center(self, image, angle):
         # Rotate The Rectangle
