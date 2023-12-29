@@ -15,8 +15,8 @@ class Car:
 
     mass = 700 # kg
     power = 350000 # w
-    width = 5 # m
-    length = 2 # m
+    width = 2.5 # m
+    length = 5.5 # m
     max_steering = 450 # degrees
 
     acceleration = 0
@@ -65,16 +65,28 @@ class Car:
     def action(self, choice):
         if choice == 0:
             self.angle += 15 # Left
+            print('Steer left')
         elif choice == 1:
             self.angle -= 15 # Right
+            print('Steer right')
         elif choice == 2:
-            if (self.speed - 2 >= 12):
-                self.speed -= 4 # Slow Down
-        else:
-            self.speed += 1 # Speed Up
+            new_speed = self.get_speed_diff()
+            print(f'Slow down - {new_speed}')
+            self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
+            #if self.speed - new_speed > 0:
+                #self.speed -= 4 # Slow Down
+                #print('Slow down')
+        elif choice == 3:
+            #self.speed += 1 # Speed Up
+            new_speed = self.get_speed_diff()
+            print(f'Speed up - {new_speed}')
+            self.speed += new_speed
 
     def _conversion_rate(self):
         return self.length_m / self.length_px
+    
+    def get_speed_diff(self):
+        return self.power / (self.mass * self.speed * FPS) * self.conversion_rate
 
     def draw(self, screen):
         screen.blit(self.rotated_sprite, self.position) # Draw Sprite
@@ -122,7 +134,6 @@ class Car:
     
     def has_crossed(self):
         has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
-        #print(self.car_rect)
         if has_crossed:
             self.activate_next()
         return has_crossed
@@ -160,7 +171,7 @@ class Car:
     
     def update(self, game_map, choice):
         if not self.speed_set:
-            self.speed = 20
+            self.speed = 1
             self.speed_set = True
 
         self.action(choice)
@@ -169,7 +180,6 @@ class Car:
         if has_crossed:
             self.goals_crossed += 1
 
-        #self.racing_data.append([self.position[0], self.position[1]])
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
         self.racing_data.append(dp)
 
@@ -194,8 +204,9 @@ class Car:
         return self.alive
 
     def get_reward(self):
-        #return self.distance
-        return self.distance * self.goals_crossed / self.n_goals
+        #return self.distance * self.goals_crossed / self.n_goals
+        #return self.goals_crossed / self.n_goals
+        return self.goals_crossed / (self.n_goals * self.time)
 
     def rotate_center(self, image, angle):
         # Rotate The Rectangle
@@ -203,7 +214,6 @@ class Car:
         rotated_image = pygame.transform.rotate(image, angle)
         rotated_rectangle = rectangle.copy()
         rotated_rectangle.center = rotated_image.get_rect().center
-        #rotated_image = rotated_image.subsurface(rotated_rectangle).copy()
 
         return rotated_image
 

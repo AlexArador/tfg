@@ -1,6 +1,3 @@
-# This Code is Heavily Inspired By The YouTuber: Cheesy AI
-# Code Changed, Optimized And Commented By: NeuralNine (Florian Dedov)
-
 from car import Car
 from racing_data import RacingLine
 from circuit import Circuit
@@ -29,33 +26,118 @@ CAR_SIZE_Y = 30
 current_generation = 0 # Generation counter
 
 MODEL_PATH = 'models'
-model_n = len(os.listdir(MODEL_PATH)) + 1
-folder_name = f'model_{str(model_n)}'
 
-def run_simulation(genomes, config):
+class Simulation:
+
+    def __init__(self, circuit: Circuit, generation: int, genomes, cars, nets, config) -> None:
+        pygame.init()
+        self.circuit = circuit
+        self.generation = generation
+        self.racing_line = RacingLine(self.generation)
+        self.genomes = genomes
+        self.config = config
+
+        self.single_genome = not type(self.genomes) is list
+
+        self.clock = pygame.time.Clock()
+        self.generation_font = pygame.font.SysFont('Arial', 30)
+        self.alive_font = pygame.font.SysFont('Arial', 20)
+
+        self.screen = pygame.display.set_mode((self.circuit.get_image_size()), pygame.RESIZABLE)
+        self.game_map = pygame.image.load(self.circuit.file).convert()
+        self.circuit_prop = self.circuit.get_prop()
+        self.circuit_start_position = self.circuit.start_position
+        for g in circuit.goals:
+            g.draw_goal(self.game_map)
+
+        self.cars = cars
+        self.nets = nets
+        self.counter = 0
+
+    def main_loop(self):
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit(0)
+
+            still_alive = self.car_loop()
+            if still_alive == 0:
+                self.racing_line.dump()
+                break
+            
+            self.counter += 1
+            if self.counter == FPS * 20: # Stop After About 20 Seconds
+                self.racing_line.dump()
+
+            # Draw Map And All Cars That Are Alive
+            self.screen.blit(self.game_map, (0, 0))
+            for car in self.cars:
+                if car.is_alive():
+                    car.draw(self.screen)
+
+            # Display Info
+            text = self.generation_font.render("Generation: " + str(current_generation), True, (0,0,0))
+            text_rect = text.get_rect()
+            text_rect.center = (900, 450)
+            self.screen.blit(text, text_rect)
+
+            text = self.alive_font.render("Still Alive: " + str(still_alive), True, (0, 0, 0))
+            text_rect = text.get_rect()
+            text_rect.center = (900, 490)
+            self.screen.blit(text, text_rect)
+
+            pygame.display.flip()
+            self.clock.tick(FPS)
+
+        #self.dump_model()
+
+    def car_loop(self):
+        still_alive = 0
+        for i, car in enumerate(self.cars):
+            if car.is_alive():
+                # Get The Acton It Takes
+                output = self.nets[i].activate(car.get_data())
+                choice = output.index(max(output))
+                still_alive += 1
+                car.update(self.game_map, choice)
+                if not self.single_genome:
+                    self.genomes[i][1].fitness += car.get_reward()
+            else:
+                self.racing_line.get_data(i, car.racing_data)
+        
+        return still_alive
+    
+def run(genome, config):
     global circuit
     global folder_name
     global current_generation
-
-    # Empty Collections For Nets and Cars
+    
     nets = []
     cars = []
     
-    # Initialize PyGame And The Display
-    pygame.init()
-    screen = pygame.display.set_mode((circuit_w, circuit_h), pygame.RESIZABLE)
+    simulation = Simulation(circuit, current_generation, genome, cars, nets, config)
     
-    # Clock Settings
-    # Font Settings & Loading Map
-    clock = pygame.time.Clock()
-    generation_font = pygame.font.SysFont("Arial", 30)
-    alive_font = pygame.font.SysFont("Arial", 20)
-    
-    game_map = pygame.image.load(circuit.file).convert() # Convert Speeds Up A Lot
-    for goal in circuit.goals:
-        goal.draw_goal(game_map)
+    net = neat.nn.FeedForwardNetwork.create(genome, config)
+    nets.append(net)
+    cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
+        
+    current_generation += 1    
+    simulation.cars = cars
+    simulation.nets = nets
+    simulation.genomes = genome
 
-    # For All Genomes Passed Create A New Neural Network
+    simulation.main_loop()
+
+def train(genomes, config):
+    global circuit
+    global folder_name
+    global current_generation
+    
+    nets = []
+    cars = []
+    
+    simulation = Simulation(circuit, current_generation, genomes, cars, nets, config)
+    
     for i, g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g, config)
         nets.append(net)
@@ -64,109 +146,96 @@ def run_simulation(genomes, config):
         cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
 
     current_generation += 1
-    racing_line = RacingLine(current_generation)
+    
+    simulation.cars = cars
+    simulation.nets = nets
+    simulation.genomes = genomes
 
-    # Simple Counter To Roughly Limit Time (Not Good Practice)
-    counter = 0
+    simulation.main_loop()
 
-    while True:
-        # Exit On Quit Event
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit(0)
+def execute(execution: str, config_path: str, checkpoint_prefix: str, model_n: int = 1, load_checkpoint: int = None, generations: int = 150, checkpoint: int = 10):
+    if execution not in ['new', 'restore', 'deploy']:
+        print(f'Provided _execution_ value is not valid: {execution}')
+        return
 
-        # Check If Car Is Still Alive
-        # Increase Fitness If Yes And Break Loop If Not
-        still_alive = 0
-        for i, car in enumerate(cars):
-            if car.is_alive():
-                # Get The Acton It Takes
-                output = nets[i].activate(car.get_data())
-                choice = output.index(max(output))
-                still_alive += 1
-                car.update(game_map, choice)
-                genomes[i][1].fitness += car.get_reward()
-            else:
-                racing_line.get_data(i, car.racing_data)
+    if execution in ['restore', 'deploy']:
+        if len(os.listdir(MODEL_PATH)) < model_n:
+            print(f'Provided model does not exist. Last model is: {model_n}')
+            return
+        else:
+            if execution == 'deploy':
+                if not os.path.exists(os.path.join(MODEL_PATH, f'model_{str(model_n)}', 'genome.pkl')):
+                    print(f'Selected model did not end the training')
+                    return
+            if execution == 'restore':
+                if os.path.exists(os.path.join(MODEL_PATH, f'model_{str(model_n)}')):
+                    if not os.path.exists(os.path.join(MODEL_PATH, f'model_path{str(model_n)}', checkpoint_prefix, load_checkpoint)):
+                        print(f'Selected checkpoint ({load_checkpoint}) to load does not exist')
+                        checkpoints = os.listdir(os.path.join(MODEL_PATH, f'model_{str(model_n)}'))
+                        load_checkpoint = max([int(x.replace(checkpoint_prefix, '')) for x in checkpoints])
+                        print(f'New selected load checkpoint: {load_checkpoint}')
+                else:
+                    print(f'Selected model does not exist')
+                    return
 
-        if still_alive == 0:
-            racing_line.dump()
-            break
-
-        counter += 1
-        if counter == FPS * 20: # Stop After About 20 Seconds
-            racing_line.dump()
-            break
-
-        # Draw Map And All Cars That Are Alive
-        screen.blit(game_map, (0, 0))
-        for car in cars:
-            if car.is_alive():
-                car.draw(screen)
-
-        # Display Info
-        text = generation_font.render("Generation: " + str(current_generation), True, (0,0,0))
-        text_rect = text.get_rect()
-        text_rect.center = (900, 450)
-        screen.blit(text, text_rect)
-
-        text = alive_font.render("Still Alive: " + str(still_alive), True, (0, 0, 0))
-        text_rect = text.get_rect()
-        text_rect.center = (900, 490)
-        screen.blit(text, text_rect)
-
-        pygame.display.flip()
-        clock.tick(FPS)
-
-    if current_generation % 10 == 0:
-        file = os.path.join(MODEL_PATH, folder_name, f'model_gen{current_generation}.pkl')
-        with open(file, 'wb') as config_file:
-            print(f'Saving model of generation {current_generation} in')
-            pickle.dump(config, config_file)
-
-        #with open('neat_genome.pkl', 'wb') as genome_file:
-            #pickle.dump(genome, genome_file)
-
-if __name__ == "__main__":
-    execution = 'new' # PARAMETRIZE
-    #execution = 'apply' # PARAMETRIZE
-
-    generation = 10 # PARAMETRIZE
-
-    model_folder = os.path.join(MODEL_PATH, folder_name)
-
-    if execution == 'new':
-        os.mkdir(model_folder)
-
-    # Load Config
-    CONFIG_PATH = "./config.txt"
     config = neat.config.Config(neat.DefaultGenome,
                                 neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet,
                                 neat.DefaultStagnation,
-                                CONFIG_PATH)
+                                config_path)
+    
+    if execution in ['new', 'restore']:
+        if execution == 'new':
+            model_n = len(os.listdir(MODEL_PATH)) + 1
+        elif execution == 'restore':
+            model_n = 1 # PARAMETRIZE
+            checkpoint = 9 # PARAMETRIZE
+            
+        folder_name = f'model_{str(model_n)}'
+        model_folder = os.path.join(MODEL_PATH, folder_name)
 
-    if execution == 'new':
-        # Create Population And Add Reporters
-        population = neat.Population(config)
-        population.add_reporter(neat.StdOutReporter(True))
+        checkpointer = neat.Checkpointer(checkpoint, filename_prefix=os.path.join(model_folder, checkpoint_prefix))
         stats = neat.StatisticsReporter()
-        population.add_reporter(stats)
 
-        # Run Simulation For A Maximum of 150 Generations
-        population.run(run_simulation, 150)
-        
-        print(population.best_genome)
-    elif execution == 'apply':
-        model_file = os.path.join(model_folder, f'neeat_config_gen{generation}.pkl')
-        with open(model_file, 'rb') as f:
+        if execution == 'new':
+            os.mkdir(model_folder)
+            population = neat.Population(config)
+        elif execution == 'restore':
+            checkpoint_path = os.path.join(model_folder, f'{CHECKPOINT_PREFIX}{checkpoint}')
+            population = checkpointer.restore_checkpoint(checkpoint_path)
+            generations -= checkpoint
+
+        population.add_reporter(neat.StdOutReporter(True))
+        population.add_reporter(stats)
+        population.add_reporter(checkpointer)
+
+        population.run(train, generations)
+
+        with open(os.path.join(model_folder, 'genome.pkl'), 'wb') as genome_file:
+            pickle.dump(stats.best_genome(), genome_file)
+    elif execution == 'deploy':
+        model_n = 1 # PARAMETRIZE
+            
+        folder_name = f'model_{str(model_n)}'
+        genome_file = os.path.join(MODEL_PATH, folder_name, 'genome.pkl')
+
+        # Cargar el genoma desde el archivo
+        with open(genome_file, 'rb') as f:
             genome = pickle.load(f)
 
-        # Crear una red neuronal a partir del genoma
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
+        run(genome, config)
+    
+if __name__ == "__main__":
+    CONFIG_PATH = 'config.txt'
+    CHECKPOINT_PREFIX = 'checkpoint-gen-'
 
-        # Aquí puedes utilizar la red neuronal (net) para hacer predicciones, realizar tareas, etc.
-        # Por ejemplo:
-        inputs = [1.0, 0.5, 0.2]  # Ejemplo de entrada
-        outputs = net.activate(inputs)
-        print("Salida de la red neuronal:", outputs)
+    generations = 20 # PARAMETRIZE
+    checkpoint = 5 # PARAMETRIZE
+    model_n = 1 # PARAMETRIZE
+    load_checkpoint = None # PARAMETRIZE
+
+    execution = 'new' # PARAMETRIZE
+    #execution = 'restore' # PARAMETRIZE
+    execution = 'deploy' # PARAMETRIZE
+
+    execute(execution, CONFIG_PATH, CHECKPOINT_PREFIX, model_n, load_checkpoint, generations, checkpoint)

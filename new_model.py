@@ -26,8 +26,6 @@ CAR_SIZE_Y = 30
 current_generation = 0 # Generation counter
 
 MODEL_PATH = 'models'
-model_n = len(os.listdir(MODEL_PATH)) + 1
-folder_name = f'model_{str(model_n)}'
 
 class Simulation:
 
@@ -89,7 +87,7 @@ class Simulation:
             pygame.display.flip()
             self.clock.tick(FPS)
 
-        self.dump_model()
+        #self.dump_model()
 
     def car_loop(self):
         still_alive = 0
@@ -106,26 +104,28 @@ class Simulation:
         
         return still_alive
     
-    def dump_model(self):
-        global MODEL_PATH
-        global folder_name
+def run(genome, config):
+    global circuit
+    global folder_name
+    global current_generation
+    
+    nets = []
+    cars = []
+    
+    simulation = Simulation(circuit, current_generation, genome, cars, nets, config)
+    
+    net = neat.nn.FeedForwardNetwork.create(genome, config)
+    nets.append(net)
+    cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
+        
+    current_generation += 1    
+    simulation.cars = cars
+    simulation.nets = nets
+    simulation.genomes = [genome]
 
-        if self.generation % 10 == 0:
-            file = os.path.join(MODEL_PATH, folder_name, f'model_gen{self.generation}.pkl')
-            with open(file, 'wb') as config_file:
-                print(f'Saving model of generation {self.generation} in')
-                pickle.dump(self.config, config_file)
+    simulation.main_loop()
 
-            config_file.close()
-
-    #def load_model(self, path, file):
-        #with open(os.path.join(path, file), 'wb') as genome_file:
-            #loaded_config = pickle.load(genome, genome_file)
-
-        #genome_file.close()
-        #return loaded_config
-
-def run_simulation(genomes, config):
+def train(genomes, config):
     global circuit
     global folder_name
     global current_generation
@@ -149,48 +149,67 @@ def run_simulation(genomes, config):
     simulation.genomes = genomes
 
     simulation.main_loop()
-    
-if __name__ == "__main__":
-    execution = 'new' # PARAMETRIZE
-    #execution = 'apply' # PARAMETRIZE
 
-    generation = 10 # PARAMETRIZE
+def execute(execution: str, config_path: str, checkpoint_prefix: str, generations: int = 150, checkpoint: int = 10):
+    if execution not in ['new', 'restore', 'deploy']:
+        print(f'Provided _execution_ value is not valid: {execution}')
 
-    model_folder = os.path.join(MODEL_PATH, folder_name)
-
-    if execution == 'new':
-        os.mkdir(model_folder)
-
-    # Load Config
-    CONFIG_PATH = "./config.txt"
     config = neat.config.Config(neat.DefaultGenome,
                                 neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet,
                                 neat.DefaultStagnation,
-                                CONFIG_PATH)
+                                config_path)
+    
+    if execution in ['new', 'restore']:
+        if execution == 'new':
+            model_n = len(os.listdir(MODEL_PATH)) + 1
+        elif execution == 'restore':
+            model_n = 1 # PARAMETRIZE
+            checkpoint = 9 # PARAMETRIZE
+            
+        folder_name = f'model_{str(model_n)}'
+        model_folder = os.path.join(MODEL_PATH, folder_name)
 
-    if execution == 'new':
-        # Create Population And Add Reporters
-        population = neat.Population(config)
-        population.add_reporter(neat.StdOutReporter(True))
+        checkpointer = neat.Checkpointer(checkpoint, filename_prefix=os.path.join(model_folder, checkpoint_prefix))
         stats = neat.StatisticsReporter()
-        population.add_reporter(stats)
 
-        # Run Simulation For A Maximum of 150 Generations
-        population.run(run_simulation, 150)
-        
-        print('BEST GENOME:')
-        print(population.best_genome)
-    elif execution == 'apply':
-        model_file = os.path.join(model_folder, f'neeat_config_gen{generation}.pkl')
-        with open(model_file, 'rb') as f:
+        if execution == 'new':
+            os.mkdir(model_folder)
+            population = neat.Population(config)
+        elif execution == 'restore':
+            checkpoint_path = os.path.join(model_folder, f'{CHECKPOINT_PREFIX}{checkpoint}')
+            population = checkpointer.restore_checkpoint(checkpoint_path)
+            generations -= checkpoint
+
+        population.add_reporter(neat.StdOutReporter(True))
+        population.add_reporter(stats)
+        population.add_reporter(checkpointer)
+
+        population.run(train, generations)
+
+        with open(os.path.join(model_folder, 'genome.pkl'), 'wb') as genome_file:
+            pickle.dump(stats.best_genome(), genome_file)
+    elif execution == 'deploy':
+        model_n = 1 # PARAMETRIZE
+            
+        folder_name = f'model_{str(model_n)}'
+        genome_file = os.path.join(MODEL_PATH, folder_name, 'genome.pkl')
+
+        # Cargar el genoma desde el archivo
+        with open(genome_file, 'rb') as f:
             genome = pickle.load(f)
 
-        # Crear una red neuronal a partir del genoma
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
+        run(genome, config)
+    
+if __name__ == "__main__":
+    CONFIG_PATH = 'config.txt'
+    CHECKPOINT_PREFIX = 'checkpoint-gen-'
 
-        # Aquí puedes utilizar la red neuronal (net) para hacer predicciones, realizar tareas, etc.
-        # Por ejemplo:
-        inputs = [1.0, 0.5, 0.2]  # Ejemplo de entrada
-        outputs = net.activate(inputs)
-        print("Salida de la red neuronal:", outputs)
+    generations = 150 # PARAMETRIZE
+    checkpoint = 10 # PARAMETRIZE
+
+    execution = 'new' # PARAMETRIZE
+    execution = 'restore' # PARAMETRIZE
+    execution = 'deploy' # PARAETRIZE
+
+    execute(execution, CONFIG_PATH, CHECKPOINT_PREFIX, generations, checkpoint)

@@ -4,7 +4,7 @@ import cv2
 import os
 
 data_folder = os.path.join('data', 'racing_line')
-generation = 150
+generation = 19
 
 df = pd.read_csv(os.path.join(data_folder, f'gen{generation}.csv'))
 df['racing_line'] = df['racing_line'].apply(lambda x: eval(x))
@@ -15,13 +15,11 @@ print(df.iloc[0])
 
 longest_car_path = df.iloc[0]['car']
 
-# map2.png 1920 10180
-
 racing_line = df['racing_line'][df['car'] == longest_car_path].iloc[0]
 coordenadas_x = [x[0] for x in racing_line]
 coordenadas_y = [x[1] for x in racing_line]
 
-imagen_circuito = cv2.imread('silverstone.png')
+imagen_circuito = cv2.imread(os.path.join('data', 'circuits', 'images', 'silverstone.png'))
 
 # Crear un gráfico de dispersión sobre la imagen
 plt.imshow(cv2.cvtColor(imagen_circuito, cv2.COLOR_BGR2RGB))  # Convertir BGR a RGB para Matplotlib
