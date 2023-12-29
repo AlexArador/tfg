@@ -1,6 +1,3 @@
-# This Code is Heavily Inspired By The YouTuber: Cheesy AI
-# Code Changed, Optimized And Commented By: NeuralNine (Florian Dedov)
-
 from car import Car
 from racing_data import RacingLine
 from circuit import Circuit
@@ -8,7 +5,6 @@ from circuit import Circuit
 import sys
 import neat
 import pygame
-import cv2
 import pickle
 import os
 
@@ -35,7 +31,7 @@ folder_name = f'model_{str(model_n)}'
 
 class Simulation:
 
-    def __init__(self, circuit: Circuit, generation: int, genomes, config) -> None:
+    def __init__(self, circuit: Circuit, generation: int, genomes, cars, nets, config) -> None:
         pygame.init()
         self.circuit = circuit
         self.generation = generation
@@ -54,17 +50,9 @@ class Simulation:
         for g in circuit.goals:
             g.draw_goal(self.game_map)
 
-        self.cars = []
-        self.nets = []
+        self.cars = cars
+        self.nets = nets
         self.counter = 0
-
-    def place_cars(self):
-        for i, g in self.genomes:
-            net = neat.nn.FeedForwardNetwork.create(g, self.config)
-            self.nets.append(net)
-            g.fitness = 0
-
-            self.cars.append(Car(*self.circuit_start_position, self.circuit.start_angle, self.circuit_w, self.circuit.goals, self.circuit_prop))
 
     def main_loop(self):
         while True:
@@ -74,7 +62,12 @@ class Simulation:
 
             still_alive = self.car_loop()
             if still_alive == 0:
+                self.racing_line.dump()
                 break
+            
+            self.counter += 1
+            if self.counter == FPS * 20: # Stop After About 20 Seconds
+                self.racing_line.dump()
 
             # Draw Map And All Cars That Are Alive
             self.screen.blit(self.game_map, (0, 0))
@@ -110,13 +103,6 @@ class Simulation:
                 self.genomes[i][1].fitness += car.get_reward()
             else:
                 self.racing_line.get_data(i, car.racing_data)
-
-        if still_alive == 0:
-            self.racing_line.dump()
-
-        self.counter += 1
-        if self.counter == FPS * 20: # Stop After About 20 Seconds
-            self.racing_line.dump()
         
         return still_alive
     
@@ -132,20 +118,35 @@ class Simulation:
 
             config_file.close()
 
-    def load_model(self, path, file):
-        with open(os.path.join(path, file), 'wb') as genome_file:
-            loaded_config = pickle.load(genome, genome_file)
+    #def load_model(self, path, file):
+        #with open(os.path.join(path, file), 'wb') as genome_file:
+            #loaded_config = pickle.load(genome, genome_file)
 
-        genome_file.close()
-        return loaded_config
+        #genome_file.close()
+        #return loaded_config
 
 def run_simulation(genomes, config):
     global circuit
     global folder_name
     global current_generation
+    
+    nets = []
+    cars = []
+    
+    simulation = Simulation(circuit, current_generation, genomes, cars, nets, config)
+    
+    for i, g in genomes:
+        net = neat.nn.FeedForwardNetwork.create(g, config)
+        nets.append(net)
+        g.fitness = 0
+
+        cars.append(Car(circuit.start_position[0], circuit.start_position[1], circuit.start_angle, circuit_w, circuit.goals, circuit.get_prop()))
 
     current_generation += 1
-    simulation = Simulation(circuit, current_generation, genomes, config)
+    
+    simulation.cars = cars
+    simulation.nets = nets
+    simulation.genomes = genomes
 
     simulation.main_loop()
     
@@ -177,6 +178,9 @@ if __name__ == "__main__":
 
         # Run Simulation For A Maximum of 150 Generations
         population.run(run_simulation, 150)
+        
+        print('BEST GENOME:')
+        print(population.best_genome)
     elif execution == 'apply':
         model_file = os.path.join(model_folder, f'neeat_config_gen{generation}.pkl')
         with open(model_file, 'rb') as f:

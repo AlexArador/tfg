@@ -8,7 +8,6 @@ from circuit import Circuit
 import sys
 import neat
 import pygame
-import cv2
 import pickle
 import os
 
@@ -156,6 +155,8 @@ if __name__ == "__main__":
 
         # Run Simulation For A Maximum of 150 Generations
         population.run(run_simulation, 150)
+        
+        print(population.best_genome)
     elif execution == 'apply':
         model_file = os.path.join(model_folder, f'neeat_config_gen{generation}.pkl')
         with open(model_file, 'rb') as f:
