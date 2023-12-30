@@ -1,6 +1,5 @@
 import json
 import cv2
-import numpy as np
 import pygame
 import math
 from PIL import Image
@@ -49,7 +48,8 @@ class Circuit:
     def __init__(self, name, extension) -> None:
         self.data_folder = os.path.join('data', 'circuits')
         self.goals_file = os.path.join(self.data_folder, 'circuits.json')
-        
+        self.circuits_file = os.path.join(self.data_folder, 'circuits.csv')
+
         self.name = name
         self.extension = extension
 
@@ -57,15 +57,18 @@ class Circuit:
         self.goals = []
 
         self.chord = self._get_chord()
-        self.length = 2400
+        self.length = self._get_length()
         self._load_goals()
 
         self.start_position, self.start_angle = self._load_start()
 
+    def _get_length(self):
+        df = pd.read_csv(self.circuits_file)
+        return df['length'][df['circuitRef'] == self.name].iloc[0]
+
     def _load_goals(self):
         with open(self.goals_file, 'r', encoding='utf-8') as file:
             data = json.load(file)
- 
             file.close()
 
         goals = data[self.name]['goals']
@@ -85,11 +88,8 @@ class Circuit:
 
     def _get_chord(self):
         imagen = cv2.imread(self.file, cv2.IMREAD_GRAYSCALE)
-        # Aplicar el algoritmo de detección de contornos (Canny)
         bordes = cv2.Canny(imagen, 50, 150)
-        # Encontrar los contornos cerrados en la imagen
         contornos, _ = cv2.findContours(bordes, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Identificar el contorno que representa la cuerda (ajusta según tus necesidades)
         cuerda_contorno = max(contornos, key=cv2.contourArea)
         longitud_pixeles = cv2.arcLength(cuerda_contorno, closed=True)
 
@@ -128,4 +128,5 @@ class Circuit:
         print(f'Available images: {len(circuit_images)}')
 
         df_circuits = df_circuits[['circuitId', 'circuitRef', 'name', 'country', 'lat', 'lng']]
-        df_circuits.to_csv(os.path.join(data_path, 'circuits', 'circuits.csv'), index=False, header=True)
+        circuits_file = os.path.join(data_path, 'circuits', 'circuits.csv')
+        df_circuits.to_csv(circuits_file, index=False, header=True)

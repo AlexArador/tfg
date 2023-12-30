@@ -31,7 +31,7 @@ class RacingLine:
         if car not in self.cars:
             df = pd.DataFrame([[car, RacingLine._export_list(data_points)]], columns=['car', 'racing_line'])
             
-            self.df = pd.concat([self.df, df])            
+            self.df = pd.concat([self.df, df])
             self.cars = set(self.df['car'].tolist())
         
     def dump(self):

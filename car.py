@@ -26,7 +26,8 @@ class Car:
         self.prop = prop
         self.size_x = self.length * self.prop
         self.size_y = self.width * self.prop
-        
+        self.corners = [0, 0, 0, 0]
+
         self.width = width
 
         self.sprite = pygame.image.load(CAR_SPRITE).convert_alpha()
@@ -61,6 +62,8 @@ class Car:
         self.car_rect = self.sprite.get_rect()
         self.n_goals = len(self.goals)
         self.goals_crossed = 0
+        self.last_time_crossed = 0
+        self.position_ref = 0
 
     def action(self, choice):
         if choice == 0: # Steer Left
@@ -69,16 +72,16 @@ class Car:
             self.angle -= 15
         elif choice == 2: # Slow Down
             new_speed = self.get_speed_diff()
-            #self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
-            self.speed = self.speed - 4 if self.speed - 4 > 0 else self.speed
+            self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
+            #self.speed = self.speed - 4 if self.speed - 4 > 0 else 1
         elif choice == 3: # Speed Up
             new_speed = self.get_speed_diff()
-            #self.speed += new_speed
-            self.speed += 1
+            self.speed += new_speed
+            #self.speed += 1
 
     def _conversion_rate(self):
         return self.length_m / self.length_px
-    
+
     def get_speed_diff(self):
         return self.power / (self.mass * self.speed * FPS) * self.conversion_rate
 
@@ -114,18 +117,23 @@ class Car:
         # Calculate Distance To Border And Append To Radars List
         dist = int(math.sqrt(math.pow(x - self.center[0], 2) + math.pow(y - self.center[1], 2)))
         self.radars.append([(x, y), dist])
-        
+
     def activate_next(self):
         if self.active_goal_index == self.n_goals - 1:
             self.active_goal_index = 0
         else:
             self.active_goal_index += 1
-            
+
         for i,g in enumerate(self.goals):
             g.switch_to(i == self.active_goal_index)
-            
+
         self.active_goal = [x for x in self.goals if x.is_active()][0]
-    
+
+    def _track_center(self):
+        r0 = self.radars[0][1]
+        r1 = self.radars[-1][1]
+        return 1 - abs(r0 - r1) / (r0 + r1) if r0 + r1 > 0 else 0
+
     def has_crossed(self):
         has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
         if has_crossed:
@@ -173,6 +181,9 @@ class Car:
         has_crossed = self.has_crossed()
         if has_crossed:
             self.goals_crossed += 1
+            self.last_time_crossed = 0
+        else:
+            self.last_time_crossed += 1
 
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
         self.racing_data.append(dp)
@@ -184,6 +195,8 @@ class Car:
         # From -90 To 120 With Step-Size 45 Check Radar
         for d in range(-90, 120, 45):
             self.check_radar(d, game_map)
+            
+        self.position_ref = self._track_center()
             
     def get_data(self):
         # Get Distances To Border
@@ -198,7 +211,8 @@ class Car:
         return self.alive
 
     def get_reward(self):
-        return self.distance * self.goals_crossed / self.n_goals
+        #return self.distance * self.goals_crossed / self.n_goals
+        return self.time * (self.goals_crossed / self.n_goals + self.position_ref)
         #return self.goals_crossed / self.n_goals
         #return self.goals_crossed / (self.n_goals * self.time)
 
