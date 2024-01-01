@@ -9,7 +9,7 @@ import pickle
 import os
 
 class Simulation:
-    def __init__(self, circuit: Circuit, generation: int, genomes, cars, nets, config, current_generation: int = 0, fps: int = 60, time_limit: int = 120) -> None:
+    def __init__(self, circuit: Circuit, generation: int, genomes, cars, nets, config, current_generation: int = 0, fps: int = 60, time_limit: int = 15) -> None:
         pygame.init()
         self.circuit = circuit
         self.generation = generation
@@ -20,6 +20,8 @@ class Simulation:
         self.time_limit = time_limit
 
         self.tick_limit = self.fps * self.time_limit
+
+        print(f'Tick limit: {self.tick_limit}')
 
         self.single_genome = not type(self.genomes) is list
 
@@ -51,6 +53,7 @@ class Simulation:
             else:
                 #ltc = [c.last_time_crossed for c in self.cars if c.is_alive()]
                 ltc = [c.last_time_crossed for c in self.cars if c.last_time_crossed < self.tick_limit]
+                print(f'LTC: {ltc}')
                 if len(ltc) == 0:
                 #if len(ltc) == 0 or min(ltc) >= self.tick_limit:
                     self.racing_line.dump()
@@ -206,13 +209,13 @@ class Model:
             self.run(genome, config)
 
 if __name__ == "__main__":
-    generations = 100 # PARAMETRIZE
+    generations = 30 # PARAMETRIZE
     checkpoint = 5 # PARAMETRIZE
     model_n = 31 # PARAMETRIZE
     load_checkpoint = 58 # PARAMETRIZE
 
     execution = 'new' # PARAMETRIZE
-    execution = 'restore' # PARAMETRIZE
+    #execution = 'restore' # PARAMETRIZE
     #execution = 'deploy' # PARAMETRIZE
     
     CIRCUIT = 'silverstone'

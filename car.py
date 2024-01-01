@@ -182,7 +182,9 @@ class Car:
         if has_crossed:
             self.goals_crossed += 1
             self.last_time_crossed = 0
+            print('CAR HAS CROSSED')
         else:
+            print('CAR HAS NOT CROSSED')
             self.last_time_crossed += 1
 
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
@@ -205,6 +207,8 @@ class Car:
         for i, radar in enumerate(radars):
             return_values[i] = int(radar[1] / 30)
 
+        return_values.append(self.speed)
+        return_values.append(self.angle)
         return return_values
 
     def is_alive(self):
