@@ -1,11 +1,11 @@
 circuitId,circuitRef,name,country,lat,lng,length
-1,albert_park,Albert Park Grand Prix Circuit,Australia,-37.8497,144.968
+1,albert_park,Albert Park Grand Prix Circuit,Australia,-37.8497,144.968,5278
 3,bahrain,Bahrain International Circuit,Bahrain,26.0325,50.5106
 4,catalunya,Circuit de Barcelona-Catalunya,Spain,41.57,2.26111
 5,istanbul,Istanbul Park,Turkey,40.9517,29.405
 6,monaco,Circuit de Monaco,Monaco,43.7347,7.42056
 7,villeneuve,Circuit Gilles Villeneuve,Canada,45.5,-73.5228
-9,silverstone,Silverstone Circuit,UK,52.0786,-1.01694,5901
+9,silverstone,Silverstone Circuit,UK,52.0786,-1.01694,5891
 11,hungaroring,Hungaroring,Hungary,47.5789,19.2486
 13,spa,Circuit de Spa-Francorchamps,Belgium,50.4372,5.97139
 14,monza,Autodromo Nazionale di Monza,Italy,45.6156,9.28111

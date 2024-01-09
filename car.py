@@ -1,28 +1,26 @@
 import math
 import pygame
 
+import numpy as np
+
 from racing_data import DataPoint
-from circuit import Goal
+from circuit import Goal, Circuit
 
 BORDER_COLOR = (255, 255, 255) # Color To Crash on Hit
-FPS = 60
 CAR_SPRITE = 'car.png'
-
-LENGTH_M = 5891
-LENGTH_PX = 6423
 
 class Car: 
 
     mass = 700 # kg
     power = 350000 # w
-    width = 2.5 # m
-    length = 5.5 # m
+    width = 10 # m
+    length = 10 # m
     max_steering = 450 # degrees
 
     acceleration = 0
     top_speed = 35
 
-    def __init__(self, sp_x, sp_y, angle, width, goals: list[Goal], prop) -> None:
+    def __init__(self, sp_x, sp_y, angle, width, goals: list[Goal], prop, circuit: Circuit, length, chord, fps=60) -> None:
         self.prop = prop
         self.size_x = self.length * self.prop
         self.size_y = self.width * self.prop
@@ -48,12 +46,13 @@ class Car:
         self.alive = True # Boolean To Check If Car is Crashed
 
         self.distance = 0 # Distance Driven
-        self.time = 0 # Time Passed
+        self.time = None # Time Passed
 
-        self.length_m = LENGTH_M
-        self.length_px = LENGTH_PX
+        self.length_m = length
+        self.length_px = chord
 
         self.conversion_rate = self._conversion_rate()
+        self.circuit = circuit
 
         self.racing_data = []
         self.goals = goals
@@ -64,6 +63,9 @@ class Car:
         self.goals_crossed = 0
         self.last_time_crossed = 0
         self.position_ref = 0
+        self.fps = fps
+        
+        self.d = self.distance_to_next_goal()
 
     def action(self, choice):
         if choice == 0: # Steer Left
@@ -79,11 +81,15 @@ class Car:
             self.speed += new_speed
             #self.speed += 1
 
+    def set_time(self, time):
+        if self.time is None:
+            self.time = time
+
     def _conversion_rate(self):
         return self.length_m / self.length_px
 
     def get_speed_diff(self):
-        return self.power / (self.mass * self.speed * FPS) * self.conversion_rate
+        return self.power / (self.mass * self.speed * self.fps * 1000) * self.conversion_rate
 
     def draw(self, screen):
         screen.blit(self.rotated_sprite, self.position) # Draw Sprite
@@ -132,7 +138,7 @@ class Car:
     def _track_center(self):
         r0 = self.radars[0][1]
         r1 = self.radars[-1][1]
-        return 1 - abs(r0 - r1) / (r0 + r1) if r0 + r1 > 0 else 0
+        return 1 - abs(r0 - r1) / abs(r0 + r1) if r0 + r1 > 0 else 0
 
     def has_crossed(self):
         has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
@@ -151,7 +157,6 @@ class Car:
 
         # Increase Distance and Time
         self.distance += self.speed
-        self.time += 1
 
         # Same For Y-Position
         self.position[1] += math.sin(math.radians(360 - self.angle)) * self.speed
@@ -184,8 +189,9 @@ class Car:
             self.last_time_crossed = 0
             print('CAR HAS CROSSED')
         else:
-            print('CAR HAS NOT CROSSED')
+            #print('CAR HAS NOT CROSSED')
             self.last_time_crossed += 1
+            #print(f'LTC: {self.last_time_crossed}')
 
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
         self.racing_data.append(dp)
@@ -197,28 +203,50 @@ class Car:
         # From -90 To 120 With Step-Size 45 Check Radar
         for d in range(-90, 120, 45):
             self.check_radar(d, game_map)
-            
-        self.position_ref = self._track_center()
-            
+
+        self.position_ref += self._track_center()
+
     def get_data(self):
         # Get Distances To Border
         radars = self.radars
         return_values = [0, 0, 0, 0, 0]
         for i, radar in enumerate(radars):
-            return_values[i] = int(radar[1] / 30)
+            return_values[i] = radar[1]
 
-        return_values.append(self.speed)
-        return_values.append(self.angle)
+        #return_values.append(self.speed)
+        #return_values.append(self.angle)
+        #return_values.append(self._track_center())
         return return_values
 
     def is_alive(self):
         return self.alive
+    
+    def distance_to_next_goal(self):
+        p1 = np.array(self.active_goal.p1)
+        p2 = np.array(self.active_goal.p2)
+        p3 = np.array(self.center)
+        
+        return np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1)
 
     def get_reward(self):
+        #t_m = 1 if self.time is None else self.time
+        #c_min = self.circuit.get_best_time(True)
+        #c_max = self.circuit.get_best_time(False)
+        #g_c = self.goals_crossed
+        #g_t = self.n_goals
+        #d = self.position_ref
+        
+        #d = np.linalg.norm(np.cross(p2-p1, p1-p3))/np.linalg.norm(p2-p1)
+        d = self.distance_to_next_goal()
+        reward = 1 if d < self.d else -1
+        self.d = d
+        
+        return reward
+
+        #return g_c / g_t * (1 - abs(c_min - t_m * g_t / (g_c + 1)) / (c_max - c_min)) * d
+        #return self.time * (self.goals_crossed / self.n_goals + self.position_ref)
         #return self.distance * self.goals_crossed / self.n_goals
-        return self.time * (self.goals_crossed / self.n_goals + self.position_ref)
-        #return self.goals_crossed / self.n_goals
-        #return self.goals_crossed / (self.n_goals * self.time)
+        #return self.goals_crossed / self.n_goals * 100
 
     def rotate_center(self, image, angle):
         # Rotate The Rectangle
@@ -228,14 +256,3 @@ class Car:
         rotated_rectangle.center = rotated_image.get_rect().center
 
         return rotated_image
-
-    def _accelerate(self, accelerate=True):
-        vector = 1
-        if accelerate:
-            vector = -1
-
-        speed = 1
-        if self.speed != 0:
-            speed = self.speed
-
-        return ((self.power / (self.mass * speed * FPS)) * self.conversion_rate * vector) / 10

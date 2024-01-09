@@ -5,6 +5,7 @@ import math
 from PIL import Image
 import os
 import pandas as pd
+from datetime import datetime
 
 class Goal:
     red = (255, 0, 0)
@@ -56,11 +57,23 @@ class Circuit:
         self.file = os.path.join(self.data_folder, 'images', f'{self.name}.{self.extension}')
         self.goals = []
 
+        self.circuit_id = self._get_circuit_id()
         self.chord = self._get_chord()
         self.length = self._get_length()
         self._load_goals()
 
         self.start_position, self.start_angle = self._load_start()
+
+    def _get_circuit_id(self):
+        df = pd.read_csv(self.circuits_file)
+        return df['circuitId'][df['circuitRef'] == self.name].iloc[0]
+
+    def get_best_time(self, best: bool = True): # False
+        df = pd.read_csv(os.path.join(self.data_folder, 'times.csv'))
+        
+        df = df[df['circuitId'] == self.circuit_id].sort_values(by='time', ascending=best)
+        t = datetime.strptime(df['time'].iloc[0], '%H:%M:%S.%f').time()
+        return (t.minute * 60 + t.second) * 1000 + t.microsecond // 1000 
 
     def _get_length(self):
         df = pd.read_csv(self.circuits_file)
@@ -130,3 +143,34 @@ class Circuit:
         df_circuits = df_circuits[['circuitId', 'circuitRef', 'name', 'country', 'lat', 'lng']]
         circuits_file = os.path.join(data_path, 'circuits', 'circuits.csv')
         df_circuits.to_csv(circuits_file, index=False, header=True)
+
+    @staticmethod
+    def convert_time(t, time_format = '%M:%S.%f'):
+        try:
+            return datetime.strptime(t, time_format).time()
+        except:
+            return None
+
+    @staticmethod
+    def get_laptimes():
+        data_path = 'data'
+
+        df_quali = pd.read_csv(os.path.join(data_path, 'raw', 'qualifying.csv'))
+        df_quali['q1'] = df_quali['q1'].apply(lambda x: Circuit.convert_time(x))
+        df_quali['q2'] = df_quali['q3'].apply(lambda x: Circuit.convert_time(x))
+        df_quali['q3'] = df_quali['q3'].apply(lambda x: Circuit.convert_time(x))
+
+        df_races = pd.read_csv(os.path.join(data_path, 'raw', 'races.csv'))
+
+        df_races = df_races[['raceId', 'circuitId']]
+        df = pd.merge(df_quali, df_races, how='inner', on='raceId')
+
+        q1 = df[['circuitId', 'q1']].rename(columns={'q1': 'time'})
+        q2 = df[['circuitId', 'q2']].rename(columns={'q2': 'time'})
+        q3 = df[['circuitId', 'q3']].rename(columns={'q3': 'time'})
+
+        qt = pd.concat([q1, q2, q3], ignore_index=True)
+        qt = qt[~qt['time'].isna()]
+
+        df.to_csv(os.path.join(data_path, 'circuits', 'qualifying.csv'), header=True, index=False)
+        qt.to_csv(os.path.join(data_path, 'circuits', 'times.csv'), header=True, index=False)

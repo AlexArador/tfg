@@ -10,7 +10,7 @@ def get_image_size(self):
         with Image.open(self.file) as img:
             return img.size
         
-circuit = os.path.join('data', 'circuits', 'images', 'silverstone.png')
+circuit = os.path.join('data', 'circuits', 'images', 'albert_park.png')
 
 with Image.open(circuit) as img:
     ANCHO, ALTO = img.size
@@ -19,7 +19,7 @@ with Image.open(circuit) as img:
 BLANCO = (255, 255, 255)
 
 # Configuración de la pantalla
-pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pantalla = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 pygame.display.set_caption("Ejemplo de Click en Pygame")
 
 # Cargar una imagen
