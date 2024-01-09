@@ -64,10 +64,18 @@ class Car:
         self.last_time_crossed = 0
         self.position_ref = 0
         self.fps = fps
+        self.choice = -1
         
         self.d = self.distance_to_next_goal()
 
-    def action(self, choice):
+    def action(self, output):
+        #oc = output.copy()
+        choice = output.index(max(output))
+        if choice == self.choice:
+            output.remove(max(output))
+            choice = output.index(max(output))
+        
+        self.choice = choice
         if choice == 0: # Steer Left
             self.angle += 15
         elif choice == 1: # Steer Right
@@ -148,10 +156,11 @@ class Car:
 
     def move(self):
         # Get Rotated Sprite And Move Into The Right X-Direction
-        # Don't Let The Car Go Closer Than 20px To The Edge
+        margin = 5 # Safety margin to the edge
+        
         self.rotated_sprite = self.rotate_center(self.sprite, self.angle)
         self.position[0] += math.cos(math.radians(360 - self.angle)) * self.speed
-        self.position[0] = max(self.position[0], 20)
+        self.position[0] = max(self.position[0], margin)
         self.position[0] = min(self.position[0], self.width - 120)
         self.car_rect.x = self.position[0]
 
@@ -160,7 +169,7 @@ class Car:
 
         # Same For Y-Position
         self.position[1] += math.sin(math.radians(360 - self.angle)) * self.speed
-        self.position[1] = max(self.position[1], 20)
+        self.position[1] = max(self.position[1], margin)
         self.position[1] = min(self.position[1], self.width - 120)
         self.car_rect.y = self.position[1]
 
@@ -187,11 +196,8 @@ class Car:
         if has_crossed:
             self.goals_crossed += 1
             self.last_time_crossed = 0
-            print('CAR HAS CROSSED')
         else:
-            #print('CAR HAS NOT CROSSED')
             self.last_time_crossed += 1
-            #print(f'LTC: {self.last_time_crossed}')
 
         dp = DataPoint(self.position[0], self.position[1], self.speed, self.angle, choice)
         self.racing_data.append(dp)
@@ -213,19 +219,19 @@ class Car:
         for i, radar in enumerate(radars):
             return_values[i] = radar[1]
 
-        #return_values.append(self.speed)
-        #return_values.append(self.angle)
+        return_values.append(self.speed)
+        return_values.append(self.d)
         #return_values.append(self._track_center())
         return return_values
 
     def is_alive(self):
         return self.alive
-    
+
     def distance_to_next_goal(self):
         p1 = np.array(self.active_goal.p1)
         p2 = np.array(self.active_goal.p2)
         p3 = np.array(self.center)
-        
+
         return np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1)
 
     def get_reward(self):
@@ -235,12 +241,12 @@ class Car:
         #g_c = self.goals_crossed
         #g_t = self.n_goals
         #d = self.position_ref
-        
+
         #d = np.linalg.norm(np.cross(p2-p1, p1-p3))/np.linalg.norm(p2-p1)
         d = self.distance_to_next_goal()
-        reward = 1 if d < self.d else -1
+        reward = self.goals_crossed + 1 if d < self.d else -3
         self.d = d
-        
+
         return reward
 
         #return g_c / g_t * (1 - abs(c_min - t_m * g_t / (g_c + 1)) / (c_max - c_min)) * d

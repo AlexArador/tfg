@@ -29,12 +29,13 @@ class Simulation:
         self.generation_font = pygame.font.SysFont('Arial', 30)
         self.alive_font = pygame.font.SysFont('Arial', 20)
 
-        self.screen = pygame.display.set_mode((self.circuit.get_image_size()), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((self.circuit.get_image_size()), pygame.FULLSCREEN)
         self.game_map = pygame.image.load(self.circuit.file).convert()
         self.circuit_prop = self.circuit.get_prop()
         self.circuit_start_position = self.circuit.start_position
-        for g in self.circuit.goals:
+        for i,g in enumerate(self.circuit.goals):
             g.draw_goal(self.game_map)
+            self.circuit.goals[i] = g
 
         self.cars = cars
         self.nets = nets
@@ -62,24 +63,19 @@ class Simulation:
                     car.draw(self.screen)
 
             # Display Info
-            text = self.generation_font.render(f'Generation: {str(self.current_generation)}', True, (0,0,0))
-            text_rect = text.get_rect()
-            text_rect.center = (900, 450)
-            self.screen.blit(text, text_rect)
-
-            text = self.alive_font.render(f'Still Alive: {str(still_alive)}', True, (0, 0, 0))
-            text_rect = text.get_rect()
-            text_rect.center = (900, 490)
-            self.screen.blit(text, text_rect)
-
+            self.draw_text(f'Generation: {str(self.current_generation)}', (900, 450))
+            self.draw_text(f'Still Alive: {str(still_alive)}', (900, 490))
             self.current_time = pygame.time.get_ticks() / 1000
-            text = self.alive_font.render(f"Tiempo: {RacingLine.convert_time(self.current_time - self.start_time)}", True, (0, 0, 0))
-            text_rect = text.get_rect()
-            text_rect.center = (900, 1000)
-            self.screen.blit(text, text_rect)
+            self.draw_text(f"Tiempo: {RacingLine.convert_time(self.current_time - self.start_time)}", (900, 1000))
 
             pygame.display.flip()
             self.clock.tick(self.fps)
+            
+    def draw_text(self, text, position, color = (0, 0, 0)):
+        text = self.alive_font.render(text, True, color)
+        text_rect = text.get_rect()
+        text_rect.center = (position)
+        self.screen.blit(text, text_rect)
 
     def car_loop(self):
         still_alive = 0
@@ -87,10 +83,8 @@ class Simulation:
             if car.is_alive():
                 if car.last_time_crossed < self.tick_limit:
                     output = self.nets[i].activate(car.get_data())
-                    #print(output)
-                    choice = output.index(max(output))
                     still_alive += 1
-                    car.update(self.game_map, choice)
+                    car.update(self.game_map, output)
                     if not self.single_genome:
                         self.genomes[i][1].fitness += car.get_reward()
                 else:
@@ -98,7 +92,7 @@ class Simulation:
             else:
                 car.alive = False
                 car.set_time(self.current_time - self.start_time)
-                self.racing_line.get_data(i, car.racing_data)
+                self.racing_line.get_data(i, car.racing_data, car.time, self.circuit.circuit_id, car.goals_crossed)
 
         return still_alive
 
@@ -107,28 +101,21 @@ class Model:
     CHECKPOINT_PREFIX = 'checkpoint-gen-'
     MODEL_PATH = 'models'
 
-    #def __init__(self, circuits: list[Circuit], change_every, current_generation: int = 0, model_path = 'models', config_path: str = 'config.txt', checkpoint_prefix: str = 'checkpoint-gen-') -> None:
-    def __init__(self, circuit: Circuit, current_generation: int = 0, model_path = 'models', config_path: str = 'config.txt', checkpoint_prefix: str = 'checkpoint-gen-') -> None:
-        #self.circuits = circuits
-        self.circuit = circuit
+    def __init__(self, circuits: list[Circuit], change_every, current_generation: int = 0, model_path = 'models', config_path: str = 'config.txt', checkpoint_prefix: str = 'checkpoint-gen-') -> None:
+    #def __init__(self, circuit: Circuit, current_generation: int = 0, model_path = 'models', config_path: str = 'config.txt', checkpoint_prefix: str = 'checkpoint-gen-') -> None:
+        self.circuits = circuits
+        self.circuit = self.circuits[0]
         self.current_generation = current_generation
-        #self.current_circuit = 0
-        #self.generation_stint = 0
 
-        #self.change_every = change_every
+        self.current_circuit = 0
+        self.generation_stint = -1
+        self.change_every = change_every
 
         self.MODEL_PATH = model_path
         self.CONFIG_PATH = config_path
         self.CHECKPOINT_PREFIX = checkpoint_prefix
-        
-        #self.circuit = self.circuits[0]
-        
-        self.prop = self.circuit.get_prop()
-        self.circuit_w, self.circuit_h = self.circuit.get_image_size()
-        self.circuit_l = self.circuit._get_length()
-        self.circuit_c = self.circuit._get_chord()
-        self.sp_0 = self.circuit.start_position[0]
-        self.sp_1 = self.circuit.start_position[1]
+
+        self.update_circuit()
 
         self.model_n = 0
 
@@ -154,12 +141,16 @@ class Model:
         nets = []
         cars = []
         
-        #if self.generation_stint == self.change_every:
-        #    self.generation_stint = 0
-        #    self.change_circuit()
-        #else:
-        #    self.generation_stint += 1
+        if self.generation_stint == self.change_every:
+            self.generation_stint = 0
+            self.change_circuit()
+        else:
+            self.generation_stint += 1
 
+        self.circuit.set_active_goal(0)
+        for i,g in enumerate(self.circuit.goals):
+            if g.is_active():
+                break
         simulation = Simulation(self.circuit, self.current_generation, genomes, cars, nets, config, self.model_n)
 
         if type(genomes) is list:
@@ -173,7 +164,7 @@ class Model:
             net = neat.nn.FeedForwardNetwork.create(genomes, config)
             nets.append(net)
             cars.append(Car(self.sp_0, self.sp_1, self.circuit.start_angle, self.circuit_w, self.circuit.goals, self.prop, self.circuit, self.circuit_l, self.circuit_c))
-            
+
         print(f'Number of cars: {len(cars)}')
 
         self.current_generation += 1
@@ -183,7 +174,7 @@ class Model:
         simulation.genomes = genomes
 
         simulation.main_loop()
-        
+
     def validate_execution(self, execution, model_n, load_checkpoint):
         if execution not in ['new', 'restore', 'deploy']:
             print(f'Provided _execution_ value is not valid: {execution}')
@@ -210,9 +201,8 @@ class Model:
                     else:
                         print(f'Selected model ({model_n}) does not exist')
                         return False
-                    
+
         return True
-        
 
     def execute(self, execution: str, model_n: int = 1, load_checkpoint: int = None, generations: int = 150, checkpoint: int = 10):
         self.validate_execution(execution, model_n, load_checkpoint)
@@ -261,21 +251,20 @@ class Model:
             self.run(genome, config)
 
 if __name__ == "__main__":
-    generations = 30 # PARAMETRIZE
-    checkpoint = 5 # PARAMETRIZE
-    model_n = 31 # PARAMETRIZE
-    load_checkpoint = 58 # PARAMETRIZE
+    GENERATIONS = 100 # PARAMETRIZE
+    CHECKPOINT = 5 # PARAMETRIZE
+    MODEL_N = 36 # PARAMETRIZE
+    LOAD_CHECKPOINT = 14 # PARAMETRIZE
 
-    execution = 'new' # PARAMETRIZE
-    #execution = 'restore' # PARAMETRIZE
-    #execution = 'deploy' # PARAMETRIZE
-    
-    change_every = 2
-    
+    EXECUTION = 'new' # PARAMETRIZE
+    #EXECUTION = 'restore' # PARAMETRIZE
+    #EXECUTION = 'deploy' # PARAMETRIZE
+
     circuits = [
         Circuit('silverstone', 'png'),
-        Circuit('albert_park', 'png')
+        #Circuit('albert_park', 'png'),
+        #Circuit('sochi', 'png')
     ]
 
-    m = Model(circuits[0], 0)
-    m.execute(execution, model_n, load_checkpoint, generations, checkpoint)
+    m = Model(circuits, 2, 0)
+    m.execute(EXECUTION, MODEL_N, LOAD_CHECKPOINT, GENERATIONS, CHECKPOINT)

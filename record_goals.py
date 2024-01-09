@@ -10,7 +10,7 @@ def get_image_size(self):
         with Image.open(self.file) as img:
             return img.size
         
-circuit = os.path.join('data', 'circuits', 'images', 'albert_park.png')
+circuit = os.path.join('data', 'circuits', 'images', 'sochi.png')
 
 with Image.open(circuit) as img:
     ANCHO, ALTO = img.size

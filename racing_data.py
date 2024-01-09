@@ -38,10 +38,10 @@ class RacingLine:
         
         return "{:02}:{:02}.{:03}".format(minutes, seconds, fractions)
 
-    def get_data(self, car, data_points: list[DataPoint]):
-        df_columns = ['car', 'racing_line']
+    def get_data(self, car, data_points: list[DataPoint], circuit, time, goals_crossed):
+        df_columns = ['car', 'time', 'circuit', 'goals_crossed', 'racing_line']
         if car not in self.cars:
-            df = pd.DataFrame([[car, RacingLine._export_list(data_points)]], columns=df_columns)
+            df = pd.DataFrame([[car, time, circuit, goals_crossed, RacingLine._export_list(data_points)]], columns=df_columns)
 
             self.df = pd.concat([self.df, df])
             self.cars = set(self.df['car'].tolist())

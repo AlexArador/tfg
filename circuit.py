@@ -10,7 +10,8 @@ from datetime import datetime
 class Goal:
     red = (255, 0, 0)
     green = (0, 255, 0)
-    width = 2
+    black = (0, 0, 0, 255)
+    width = 5
 
     def __init__(self, p1, p2, active = False) -> None:
         self.p1 = p1
@@ -22,7 +23,40 @@ class Goal:
         print(f'Línea: {self.get_line()}. Activa: {self._active}')
 
     def draw_goal(self, game_map):
-        pygame.draw.line(game_map, 'green', self.p1, self.p2, self.width)
+        fp, lp = self.get_points_in_line(game_map)
+        self.p1 = fp
+        self.p2 = lp
+        pygame.draw.line(game_map, self.get_color(), self.p1, self.p2, self.width)
+        
+    def get_points_in_line(self, game_map):
+        x1 = self.p1[0]
+        y1 = self.p1[1]
+        
+        x2 = self.p2[0]
+        y2 = self.p2[1]
+        
+        puntos = []
+        dx = abs(x2 - x1)
+        dy = abs(y2 - y1)
+        sx = 1 if x1 < x2 else -1
+        sy = 1 if y1 < y2 else -1
+        error = dx - dy
+
+        while x1 != x2 or y1 != y2:
+            if game_map.get_at((x1, y1)) == self.black:
+                puntos.append((x1, y1))
+            e2 = 2 * error
+            if e2 > -dy:
+                error -= dy
+                x1 += sx
+            if e2 < dx:
+                error += dx
+                y1 += sy
+
+        if game_map.get_at((x2, y2)) == self.black:
+            puntos.append((x2, y2))
+        return puntos[0], puntos[-1]
+
 
     def get_color(self):
         return self.red if self._active else self.green
@@ -64,6 +98,10 @@ class Circuit:
 
         self.start_position, self.start_angle = self._load_start()
 
+    def set_active_goal(self, to):
+        for i,g in enumerate(self.goals):
+            g.switch_to(i == to)
+    
     def _get_circuit_id(self):
         df = pd.read_csv(self.circuits_file)
         return df['circuitId'][df['circuitRef'] == self.name].iloc[0]

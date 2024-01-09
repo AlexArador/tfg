@@ -21,7 +21,7 @@ circuitId,circuitRef,name,country,lat,lng,length
 44,las_vegas,Las Vegas Street Circuit,USA,36.1162,-115.174
 69,americas,Circuit of the Americas,USA,30.1328,-97.6411
 70,red_bull_ring,Red Bull Ring,Austria,47.2197,14.7647
-71,sochi,Sochi Autodrom,Russia,43.4057,39.9578
+71,sochi,Sochi Autodrom,Russia,43.4057,39.9578,5848
 73,baku,Baku City Circuit,Azerbaijan,40.3725,49.8533
 75,portimao,Autódromo Internacional do Algarve,Portugal,37.227,-8.6267
 76,mugello,Autodromo Internazionale del Mugello,Italy,43.9975,11.3719
