@@ -6,9 +6,11 @@ import os
 
 circuit = Circuit('silverstone', 'png')
 circuit_w, circuit_h = circuit.get_image_size()
+# 80 - 0
 
-data_folder = os.path.join('data', 'racing_line')
-generation = 59
+model = 80
+generation = 0
+data_folder = os.path.join('models', f'model_{model}', 'racing_data')
 
 df = pd.read_csv(os.path.join(data_folder, f'gen{generation}.csv'))
 df['racing_line'] = df['racing_line'].apply(lambda x: eval(x))

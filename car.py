@@ -13,7 +13,7 @@ class Car:
 
     mass = 700 # kg
     power = 350000 # w
-    width = 10 # m
+    width = 5 # m
     length = 10 # m
     max_steering = 450 # degrees
 
@@ -65,7 +65,7 @@ class Car:
         self.position_ref = 0
         self.fps = fps
         self.choice = -1
-        
+
         self.d = self.distance_to_next_goal()
 
     def action(self, output):
@@ -77,17 +77,17 @@ class Car:
         
         self.choice = choice
         if choice == 0: # Steer Left
-            self.angle += 15
+            self.angle += 10
         elif choice == 1: # Steer Right
-            self.angle -= 15
+            self.angle -= 10
         elif choice == 2: # Slow Down
-            new_speed = self.get_speed_diff()
-            self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
-            #self.speed = self.speed - 4 if self.speed - 4 > 0 else 1
+            #new_speed = self.get_speed_diff()
+            #self.speed = self.speed - new_speed if self.speed - new_speed > 0 else 1
+            self.speed = self.speed - 4 if self.speed - 4 > 0 else 1
         elif choice == 3: # Speed Up
-            new_speed = self.get_speed_diff()
-            self.speed += new_speed
-            #self.speed += 1
+            #new_speed = self.get_speed_diff()
+            #self.speed += new_speed
+            self.speed += 4
 
     def set_time(self, time):
         if self.time is None:
@@ -144,9 +144,11 @@ class Car:
         self.active_goal = [x for x in self.goals if x.is_active()][0]
 
     def _track_center(self):
-        r0 = self.radars[0][1]
-        r1 = self.radars[-1][1]
-        return 1 - abs(r0 - r1) / abs(r0 + r1) if r0 + r1 > 0 else 0
+        if len(self.radars) == 0:
+            return 0
+        r0 = self.radars[0][1] * 1.0
+        r1 = self.radars[-1][1] * 1.0
+        return 1 - abs(r0 - r1) / abs(r0 + r1) if r0 + r1 > 0 else 1
 
     def has_crossed(self):
         has_crossed = any(self.car_rect.clipline(self.active_goal.get_line()))
@@ -220,8 +222,8 @@ class Car:
             return_values[i] = radar[1]
 
         return_values.append(self.speed)
-        return_values.append(self.d)
-        #return_values.append(self._track_center())
+        #return_values.append(self.d)
+        return_values.append(self._track_center())
         return return_values
 
     def is_alive(self):
@@ -235,24 +237,11 @@ class Car:
         return np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1)
 
     def get_reward(self):
-        #t_m = 1 if self.time is None else self.time
-        #c_min = self.circuit.get_best_time(True)
-        #c_max = self.circuit.get_best_time(False)
-        #g_c = self.goals_crossed
-        #g_t = self.n_goals
-        #d = self.position_ref
-
-        #d = np.linalg.norm(np.cross(p2-p1, p1-p3))/np.linalg.norm(p2-p1)
         d = self.distance_to_next_goal()
-        reward = self.goals_crossed + 1 if d < self.d else -3
+        reward = 10 * (self.goals_crossed + 1) if d < self.d else -3
         self.d = d
 
         return reward
-
-        #return g_c / g_t * (1 - abs(c_min - t_m * g_t / (g_c + 1)) / (c_max - c_min)) * d
-        #return self.time * (self.goals_crossed / self.n_goals + self.position_ref)
-        #return self.distance * self.goals_crossed / self.n_goals
-        #return self.goals_crossed / self.n_goals * 100
 
     def rotate_center(self, image, angle):
         # Rotate The Rectangle

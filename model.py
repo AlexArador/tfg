@@ -92,7 +92,7 @@ class Simulation:
             else:
                 car.alive = False
                 car.set_time(self.current_time - self.start_time)
-                self.racing_line.get_data(i, car.racing_data, car.time, self.circuit.circuit_id, car.goals_crossed)
+                self.racing_line.get_data(i, car.racing_data, self.circuit.circuit_id, car.time, car.goals_crossed)
 
         return still_alive
 
