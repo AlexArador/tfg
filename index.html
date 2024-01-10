@@ -49,10 +49,7 @@
 	/*
 		* Cargar diferentes resultados
 		* Mostrar datos del circuito
-		* Cargar circuits.csv
-		* Crear escala
 		* Obtener imagen del circuito a través de circuits.csv
-		* Obtener el total de goals de un circuito
 	*/
 
 	url = 'data/circuits/images/silverstone.png';
@@ -211,6 +208,9 @@
 		    		case 'data/circuits/circuits.json':
 		    			parseCircuitsJson(content);
 		    			break;
+		    		case 'data/models/models.csv':
+		    			parseModelsCsv(content);
+		    			break;
 		    		default:
 		    			parseCsvContent(content);
 		    			break;
@@ -291,10 +291,26 @@
 			}
 		}
 	}
+
+	var models = [];
+	function parseModelsCsv(csvContent) {
+		var data = Papa.parse(csvContent);
+		headers = data['data'][0];
+		console.log(headers);
+
+		data = data['data'].splice(1,data['data'].length);
+
+		for (i = 0; i < data.length; i++) {
+			models.push(data[i][0]);
+		}
+
+		console.log(models);
+	}
 	
 
     readCsvContent('data/circuits/circuits.csv');
     readCsvContent('data/circuits/circuits.json');
+    readCsvContent('data/models/models.csv');
 	readCsvContent('THIS_ONE.csv');
 
     // Llamar a la función para leer el archivo CSV local de manera síncrona
