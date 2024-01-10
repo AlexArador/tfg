@@ -5,6 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title></title>
 	<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+	<script src="./classes.js"></script>
+	<script src="./library.js"></script>
 
 	<style type="text/css">
 		#circuit {
@@ -26,6 +28,8 @@
 		<!--<img src="data/circuits/images/silverstone.png">-->
 	</div>
 
+	<h1 id="title"></h1>
+
 	<div id="variablesCanvas">
 		<table id="variablesTable">
 			<tr id="lapTimeRow">
@@ -43,8 +47,23 @@
 		</table>
 	</div>
 
+	<select id="modelSelector" onchange="checkSelectors(); loadGenerations()">
+		<option value="placeholder" selected disabled hidden>Choose a model</option>
+	</select>
+
+	<select id="generationSelector" onchange="checkSelectors()">
+		<option value="placeholder" selected disabled hidden>Choose a generation</option>
+	</select>
+
+	<select id="carSelector" onchange="selectCar()">
+		<option value="placeholder" selected disabled hidden>Choose a car</option>
+		<option value="best">Car with the longest path</option>
+	</select>
+
 
 <script>
+	var circuits = [];
+	var models = [];
 
 	/*
 		* Cargar diferentes resultados
@@ -52,350 +71,51 @@
 		* Obtener imagen del circuito a través de circuits.csv
 	*/
 
-	url = 'data/circuits/images/silverstone.png';
-	const scale = changeImage(url);
+	function checkSelectors() {
+		modelSelector = document.getElementById('modelSelector');
+		generationSelector = document.getElementById('generationSelector');
+		carSelector = document.getElementById('carSelector');
 
-	function changeImage(newImage) {
-		var circuitDiv = document.getElementById("circuit");
-		var img = new Image();
+		selectedModel = modelSelector.selectedIndex;
+		selectedGeneration = generationSelector.selectedIndex;
+		selectedCar = carSelector.selectedIndex;
 
-		circuitDiv.style.backgroundImage = "url('" + newImage + "')";		
-	    img.src = url;
-
-	    console.log('Div width:', circuitDiv.clientWidth);
-		console.log('Div height:', circuitDiv.clientHeight);
-
-	    console.log('Image width:', img.naturalWidth);
-	    console.log('Image height:', img.naturalHeight);
-
-	    const scaleWidth = circuitDiv.clientWidth / img.naturalWidth;
-	    const scaleHeight = circuitDiv.clientHeight / img.naturalHeight;
-
-	    console.log('Width scale:', scaleWidth);
-	    console.log('Height scale:', scaleHeight);
-
-	    return [scaleWidth, scaleHeight];
-	}
-
-	function parseCsvContent(csvContent) {
-		var data = Papa.parse(csvContent);
-		headers = data['data'][0];
-		console.log(headers); // GAZAPO. EL ORDEN Cambiará de contenido en siguientes ejecuciones del modelo
-
-		data = data['data'].splice(1,data['data'].length);
-
-		var cars = [];
-		var times = [];
-		var racingCircuits = [];
-		var goalsCrossed = [];
-		var racingLines = [];
-		for (i = 0; i < data.length; i++) {
-			cars.push(data[i][0]);
-			racingCircuits.push(data[i][1]);
-			times.push(data[i][2]);
-			goalsCrossed.push(data[i][3]);
-			racingLines.push(data[i][4]);
-		}
-
-		var racingLinesObj = [];
-		var longestDataPoints = 0;
-		var longestDataPointsIndex = -1;
-		for (i = 0; i < racingLines.length; i++) {
-			var dataPoints = JSON.parse(racingLines[i]);
-			racingLinesObj.push(dataPoints);
-			if (dataPoints.length > longestDataPoints) {
-				longestDataPoints = dataPoints.length;
-				longestDataPointsIndex = i;
-			}
-		}
-
-		longestRacingLine = racingLinesObj[longestDataPointsIndex];
-
-		car = cars[longestDataPointsIndex];
-		time = times[longestDataPointsIndex];
-		circuit = parseInt(racingCircuits[longestDataPointsIndex]);
-		goalsCrossed = goalsCrossed[longestDataPointsIndex];
-
-		console.log('Car:', car);
-		console.log('Time:', time);
-		console.log('Circuit:', circuit);
-		console.log('Goals crossed:', goalsCrossed);
-
-		x = [];
-		y = [];
-		speeds = [];
-		angles = [];
-		choices = [];
-		for (i = 0; i < longestRacingLine.length; i++) {
-			dataPoint = longestRacingLine[i];
-
-			x.push(dataPoint[0]);
-			y.push(dataPoint[1]);
-			speeds.push(dataPoint[2]);
-			angles.push(dataPoint[3]);
-			choices.push(dataPoint[4]);
-		}
-
-		points = [];
-		for (i = 0; i < x.length; i++) {
-			points.push([x[i] * scale[0] ,y[i] * scale[1]]);
-		}
-
-		drawRacingLine(points);
-		printTime(time);
-
-		const totalGoals = circuits[getCircuitById(circuit)].circuitGoals;
-
-		var hideOrShow = goalsCrossed < totalGoals;
-		hideOrShowRow('goalsCrossedRow', hideOrShow);
-		hideOrShowRow('projectedLapTimeRow', hideOrShow);
-
-		if (hideOrShow) {
-			printGoals(goalsCrossed, totalGoals);
-			let projectedLapTime = getProjectedLapTime(time, goalsCrossed, totalGoals);
-			printProjectedLapTime(projectedLapTime);
-		}
-		
-
-	}
-
-	function hideOrShowRow(rowId, hideOrShow) {
-		row = document.getElementById(rowId);
-		row.style.display = hideOrShow ? '' : 'none';
-	}
-
-	function parseTime(time) {
-		minutes = parseInt(Math.floor(time / 60));
-		rem = time - minutes * 60;
-
-		seconds = parseInt(rem);
-
-		fractions = Math.round((rem - seconds) * 1000) / 100;
-		fractions = fractions.toString().replace('.', '');
-
-		return minutes.toString().concat(':', seconds.toString(), '.', fractions.toString());
-	}
-
-	function printTime(time) {
-		lapTime = document.getElementById('lapTime');
-		lapTime.textContent = parseTime(time);
-	}
-
-	function printGoals(goals, totalGoals) {
-		goalsCrossed = document.getElementById('goalsCrossed');
-		goalsCrossed.textContent = parseInt(Math.round(goals)).toString().concat(' out of ', totalGoals.toString());
-	}
-
-	function getProjectedLapTime(time, goals, totalGoals) {
-		return time * totalGoals / goals;
-	}
-
-	function printProjectedLapTime(time) {
-		projectedLapTimeDOM = document.getElementById('projectedLapTime');
-		projectedLapTimeDOM.textContent = parseTime(time);
-	}
-
-	async function readCsvContent(fileName) {
-        try {
-            const response = await fetch(fileName);
-            if (response.ok) {
-                const content = await response.text();
-
-                switch (fileName) {
-		    		case 'data/circuits/circuits.csv':
-		    			parseCircuits(content);
-		    			break;
-		    		case 'data/circuits/circuits.json':
-		    			parseCircuitsJson(content);
-		    			break;
-		    		case 'data/models/models.csv':
-		    			parseModelsCsv(content);
-		    			break;
-		    		default:
-		    			parseCsvContent(content);
-		    			break;
-		    	}
-
-            } else {
-                console.error("Failed to fetch the file. Status:", response.status);
-            }
-        } catch (error) {
-            console.error("An error occurred:", error);
-        }
-    }
-
-    class Circuit {
-	    constructor(circuitId, circuitRef, name, country, lat, lng, length) {
-	        this.circuitId = circuitId;
-	        this.circuitRef = circuitRef;
-	        this.name = name;
-	        this.country = country;
-	        this.lat = lat;
-	        this.lng = lng;
-	        this.length = length;
-
-	        this._circuitGoals = 0;
-	    }
-
-	    get circuitGoals() {
-	        return this._circuitGoals;
-	    }
-
-	    set circuitGoals(newGoals) {
-	    	this._circuitGoals = newGoals;
-	    }
-	}
-
-	function parseCircuits(csvContent) {
-		var data = Papa.parse(csvContent);
-		headers = data['data'][0];
-		console.log(headers);
-
-		data = data['data'].splice(1,data['data'].length);
-
-		for (i = 0; i < data.length; i++) {
-			c = data[i]
-			circuits.push(new Circuit(c[0], c[1], c[2], c[3], c[4], c[5], c[6]));
-		}
-	}
-
-	function parseCircuitsJson(csvContent) {
-		circuitsJson = JSON.parse(csvContent);
-		circuitKeys = Object.keys(circuitsJson);
-
-		for (i = 0; i < circuitKeys.length; i++) {
-			k = circuitKeys[i];
-			circuitIndex = getCircuitByRef(k);
-			c = circuits[circuitIndex];
-			
-			c.circuitGoals = circuitsJson[k]['goals'].length;
-			circuits[circuitIndex] = c;
-		}
-
-	}
-
-	var circuits = [];
-
-	function getCircuitById(id) {
-		for (i = 0; i < circuits.length; i++) {
-			if (id == circuits[i].circuitId) {
-				return i;
+		if (selectedModel == 0) {
+			generationSelector.style.display = 'none';
+			carSelector.style.display = 'none';
+		} else {
+			generationSelector.style.display = 'block';
+			if (selectedGeneration == 0) {
+				carSelector.style.display = 'none';
+			} else {
+				carSelector.style.display = 'block';
+				if (carSelector.options.length == 2) {
+					selectedModel = modelSelector[selectedModel].value.toString();
+					selectedGeneration = generationSelector[selectedGeneration].value.toString();
+					readCsvContent('models/model_' + selectedModel + '/racing_data/gen' + selectedGeneration +'.csv', null);				
+				}
 			}
 		}
 	}
 
-	function getCircuitByRef(id) {
-		for (i = 0; i < circuits.length; i++) {
-			if (id == circuits[i].circuitRef) {
-				return i;
-			}
+	function selectCar() {
+		carSelector = document.getElementById('carSelector');
+		selectedCar = carSelector.selectedIndex;
+		selectedCar = carSelector[selectedCar].value.toString();
+
+		if (selectedCar == "best") {
+			selectedCar = "-1";
 		}
+		readCsvContent('models/model_' + selectedModel + '/racing_data/gen' + selectedGeneration +'.csv', selectedCar);
 	}
 
-	var models = [];
-	function parseModelsCsv(csvContent) {
-		var data = Papa.parse(csvContent);
-		headers = data['data'][0];
-		console.log(headers);
+	checkSelectors();
 
-		data = data['data'].splice(1,data['data'].length);
+    readCsvContent('data/circuits/circuits.csv', null);
+    readCsvContent('data/circuits/circuits.json', null);
+    readCsvContent('data/models/models.csv', null);
+    readCsvContent('data/models/generations.csv', null);
 
-		for (i = 0; i < data.length; i++) {
-			models.push(data[i][0]);
-		}
-
-		console.log(models);
-	}
-	
-
-    readCsvContent('data/circuits/circuits.csv');
-    readCsvContent('data/circuits/circuits.json');
-    readCsvContent('data/models/models.csv');
-	readCsvContent('THIS_ONE.csv');
-
-    // Llamar a la función para leer el archivo CSV local de manera síncrona
-    //readLocalCSV('data/circuits/circuits.csv');
-
-
-	function drawRacingLine(points) {
-		var circuitDiv = document.getElementById("circuit");
-
-	    var canvas = document.createElement('canvas');
-	    canvas.width = circuitDiv.clientWidth;
-	    canvas.height = circuitDiv.clientHeight;
-	    
-	    var ctx = canvas.getContext('2d');
-	    ctx.fillStyle = 'red';
-
-	    for (var i = 0; i < points.length; i++) {
-	        var point = points[i];
-	        ctx.beginPath();
-	        ctx.arc(point[0], point[1], 2, 0, 2 * Math.PI);
-	        ctx.fill();
-	    }
-	    circuitDiv.appendChild(canvas);
-	}
-
-
-// Enviar la solicitud
-//solicitud.send();
 </script>
 </body>
 </html>
-
-<!--
-<div id="lienzo" style="position: relative; width: 400px; height: 300px; border: 1px solid #ccc;"></div>
-
-<script>
-function dibujarPuntos() {
-    // Obtener el elemento div
-    var div = document.getElementById('lienzo');
-    
-    // Crear un elemento canvas dentro del div
-    var canvas = document.createElement('canvas');
-    canvas.width = div.clientWidth;
-    canvas.height = div.clientHeight;
-    
-    // Obtener el contexto de dibujo 2D
-    var ctx = canvas.getContext('2d');
-    
-    // Array de puntos (cada punto es un par [x, y])
-    var puntos = [[50, 50], [100, 150], [200, 100], [300, 200]];
-    
-    // Dibujar cada punto en el contexto del canvas
-    ctx.fillStyle = 'blue';
-    for (var i = 0; i < puntos.length; i++) {
-        var punto = puntos[i];
-        ctx.beginPath();
-        ctx.arc(punto[0], punto[1], 5, 0, 2 * Math.PI);
-        ctx.fill();
-    }
-    
-    // Adjuntar el canvas al div
-    div.appendChild(canvas);
-}
-
-// Llamar a la función para dibujar los puntos
-dibujarPuntos();
-</script>
-
-</body>
-</html>
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leer Archivo CSV Local</title>
-</head>
-<body>
-
-
-
-</body>
-</html>
-
-
--->
