@@ -1,5 +1,5 @@
 function drawRacingLine(points) {
-	let circuitDiv = document.getElementById("circuit");
+	let circuitDiv = document.getElementById("racingLineDiv");
 
 	preCanvas = document.getElementById('racingLineCanvas');
 	if (typeof(preCanvas) != 'undefined' && preCanvas != null) {
@@ -62,11 +62,15 @@ function parseCircuitsJson(csvContent) {
 }
 
 function changeImage(newImage) {
-	let circuitDiv = document.getElementById("circuit");
+	let scale = 0.5;
+	let circuitDiv = document.getElementById("racingLineDiv");
 	let img = new Image();
 
 	circuitDiv.style.backgroundImage = "url('" + newImage + "')";		
     img.src = url;
+
+    circuitDiv.style.width = parseInt(img.naturalWidth * scale).toString() + "px";
+    circuitDiv.style.height = parseInt(img.naturalHeight * scale).toString() + "px";
 
     //console.log('Div width:', circuitDiv.clientWidth);
 	//console.log('Div height:', circuitDiv.clientHeight);
@@ -80,12 +84,14 @@ function changeImage(newImage) {
     //console.log('Width scale:', scaleWidth);
     //console.log('Height scale:', scaleHeight);
 
-    return [scaleWidth, scaleHeight];
+    //return [scaleWidth, scaleHeight];
+    return [scale, scale];
 }
 
 function loadCars(cars) {
-	clearOptions('carSelector');
-	carSelector = document.getElementById('carSelector');
+	let carSelectorId = "select-9d97";
+	clearOptions(carSelectorId);
+	carSelector = document.getElementById(carSelectorId);
 
 	for (i = 0; i < cars.length; i++) {
 		let carOption = cars[i].toString();
@@ -141,11 +147,10 @@ function printThisRacingLine(csvContent, thisCar) {
 	circuit = parseInt(racingCircuits[longestDataPointsIndex]);
 	goalsCrossed = goalsCrossed[longestDataPointsIndex];
 
-	console.log(car);
-
 	let c = circuits[getCircuitById(circuit)];
 	url = 'data/circuits/images/' + c.circuitRef + '.png';
 	const scale = changeImage(url);
+	changeCircuitCard(c);
 
 	x = [];
 	y = [];
@@ -162,14 +167,17 @@ function printThisRacingLine(csvContent, thisCar) {
 		choices.push(dataPoint[4]);
 	}
 
-	points = [];
+	let points = [];
 	for (i = 0; i < x.length; i++) {
 		points.push([x[i] * scale[0] ,y[i] * scale[1]]);
 	}
 
+	console.log('Original X:', x[0], 'Scalated X:', points[0][0]);
+	console.log('Original Y:', y[0], 'Scalated Y:', points[0][1]);
+
 	drawRacingLine(points);
 	printTime(time);
-	printTitle('Racing line for car nº ' + car);
+	printTitle('Trazada para el coche nº ' + car);
 
 	const totalGoals = circuits[getCircuitById(circuit)].circuitGoals;
 
@@ -185,6 +193,11 @@ function printThisRacingLine(csvContent, thisCar) {
 		}
 		printProjectedLapTime(projectedLapTime);
 	}
+}
+
+function changeCircuitCard(c) {
+	console.log('CIRCUIT:');
+	console.log(c);
 }
 
 function parseCarsContent(csvContent) {
@@ -225,7 +238,7 @@ function parseTime(time) {
 }
 
 function printTitle(title) {
-	titleElement = document.getElementById('title');
+	titleElement = document.getElementById('variablesCanvasTitle');
 	titleElement.textContent = title;
 }
 
@@ -236,7 +249,7 @@ function printTime(time) {
 
 function printGoals(goals, totalGoals) {
 	goalsCrossed = document.getElementById('goalsCrossed');
-	goalsCrossed.textContent = parseInt(Math.round(goals)).toString().concat(' out of ', totalGoals.toString());
+	goalsCrossed.textContent = parseInt(Math.round(goals)).toString().concat(' de ', totalGoals.toString());
 }
 
 function getProjectedLapTime(time, goals, totalGoals) {
@@ -306,7 +319,7 @@ function parseGenerationsCsv(csvContent) {
 
 function clearOptions(selectorElement) {
 	let lastIndex = 1;
-	if (selectorElement == 'carSelector') {
+	if (selectorElement == 'select-9d97') {
 		lastIndex = 2;
 	}
 	selector = document.getElementById(selectorElement);
@@ -316,7 +329,9 @@ function clearOptions(selectorElement) {
 }
 
 function loadModels() {
-	clearOptions('modelSelector');
+	let modelSelectorId = 'select-f235';
+	clearOptions(modelSelectorId);
+	let modelSelector = document.getElementById(modelSelectorId);
 
 	for (i = 0; i < models.length; i++) {
 		m = models[i];
@@ -328,10 +343,10 @@ function loadModels() {
 }
 
 function loadGenerations() {
-	clearOptions('generationSelector');
+	clearOptions('select-ed49');
 
-	modelSelector = document.getElementById('modelSelector');
-	generationSelector = document.getElementById('generationSelector');
+	modelSelector = document.getElementById('select-f235');
+	generationSelector = document.getElementById('select-ed49');
 	selectedModel = modelSelector.options[modelSelector.selectedIndex].text;
 
 	generations = models[getModelById(modelId.toString())].generations;
