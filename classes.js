@@ -14,9 +14,9 @@ class Model {
     }
 }
 
-function getModelById(id) {
-    for (i = 0; i < models.length; i++) {
-        if (id == models[i].id) {
+function getModelById(modelsToSearch, id) {
+    for (let i = 0; i < modelsToSearch.length; i++) {
+        if (id == modelsToSearch[i].id) {
             return i;
         }
     }
@@ -44,16 +44,16 @@ class Circuit {
     }
 }
 
-function getCircuitById(id) {
-    for (i = 0; i < circuits.length; i++) {
+function getCircuitById(circuitsToSearch, id) {
+    for (let i = 0; i < circuits.length; i++) {
         if (id == circuits[i].circuitId) {
             return i;
         }
     }
 }
 
-function getCircuitByRef(id) {
-    for (i = 0; i < circuits.length; i++) {
+function getCircuitByRef(circuitsToSearch, id) {
+    for (let i = 0; i < circuits.length; i++) {
         if (id == circuits[i].circuitRef) {
             return i;
         }

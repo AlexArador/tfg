@@ -14,7 +14,7 @@ function drawRacingLine(points) {
     let ctx = canvas.getContext('2d');
     ctx.fillStyle = 'red';
 
-    for (i = 0; i < points.length; i++) {
+    for (let i = 0; i < points.length; i++) {
         let point = points[i];
         ctx.beginPath();
         ctx.arc(point[0], point[1], 2, 0, 2 * Math.PI);
@@ -29,7 +29,7 @@ function parseModelsCsv(csvContent) {
 
 	data = data['data'].splice(1,data['data'].length);
 
-	for (i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length - 1; i++) {
 		models.push(new Model(data[i][0]));
 	}
 }
@@ -40,7 +40,7 @@ function parseCircuits(csvContent) {
 
 	data = data['data'].splice(1,data['data'].length);
 
-	for (i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length; i++) {
 		c = data[i]
 		circuits.push(new Circuit(c[0], c[1], c[2], c[3], c[4], c[5], c[6]));
 	}
@@ -50,9 +50,9 @@ function parseCircuitsJson(csvContent) {
 	circuitsJson = JSON.parse(csvContent);
 	circuitKeys = Object.keys(circuitsJson);
 
-	for (i = 0; i < circuitKeys.length; i++) {
+	for (let i = 0; i < circuitKeys.length; i++) {
 		k = circuitKeys[i];
-		circuitIndex = getCircuitByRef(k);
+		circuitIndex = getCircuitByRef(circuits, k);
 		c = circuits[circuitIndex];
 		
 		c.circuitGoals = circuitsJson[k]['goals'].length;
@@ -93,7 +93,7 @@ function loadCars(cars) {
 	clearOptions(carSelectorId);
 	carSelector = document.getElementById(carSelectorId);
 
-	for (i = 0; i < cars.length; i++) {
+	for (let i = 0; i < cars.length; i++) {
 		let carOption = cars[i].toString();
 		let option = document.createElement("option");
 		option.value = carOption;
@@ -115,7 +115,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	let racingCircuits = [];
 	let goalsCrossed = [];
 	let racingLines = [];
-	for (i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length; i++) {
 		let d = data[i];
 		cars.push(d[0]);
 		racingCircuits.push(d[1]);
@@ -128,7 +128,7 @@ function printThisRacingLine(csvContent, thisCar) {
 		let racingLinesObj = [];
 		let longestDataPoints = 0;
 		var longestDataPointsIndex = -1;
-		for (i = 0; i < racingLines.length; i++) {
+		for (let i = 0; i < racingLines.length; i++) {
 			let dataPoints = JSON.parse(racingLines[i]);
 			racingLinesObj.push(dataPoints);
 			if (dataPoints.length > longestDataPoints) {
@@ -147,7 +147,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	circuit = parseInt(racingCircuits[longestDataPointsIndex]);
 	goalsCrossed = goalsCrossed[longestDataPointsIndex];
 
-	let c = circuits[getCircuitById(circuit)];
+	let c = circuits[getCircuitById(circuits, circuit)];
 	url = 'data/circuits/images/' + c.circuitRef + '.png';
 	const scale = changeImage(url);
 	changeCircuitCard(c);
@@ -157,7 +157,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	speeds = [];
 	angles = [];
 	choices = [];
-	for (i = 0; i < racingLine.length; i++) {
+	for (let i = 0; i < racingLine.length; i++) {
 		dataPoint = racingLine[i];
 
 		x.push(dataPoint[0]);
@@ -168,7 +168,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	}
 
 	let points = [];
-	for (i = 0; i < x.length; i++) {
+	for (let i = 0; i < x.length; i++) {
 		points.push([x[i] * scale[0] ,y[i] * scale[1]]);
 	}
 
@@ -179,7 +179,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	printTime(time);
 	printTitle('Trazada para el coche nº ' + car);
 
-	const totalGoals = circuits[getCircuitById(circuit)].circuitGoals;
+	const totalGoals = circuits[getCircuitById(getCircuitById, circuit)].circuitGoals;
 
 	let hideOrShow = goalsCrossed < totalGoals;
 	hideOrShowRow('goalsCrossedRow', hideOrShow);
@@ -209,7 +209,7 @@ function parseCarsContent(csvContent) {
 	data = data.splice(0,data.length - 1);
 
 	let cars = [];
-	for (i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length; i++) {
 		cars.push(data[i][0]);
 	}
 
@@ -307,12 +307,12 @@ function parseGenerationsCsv(csvContent) {
 	headers = data['data'][0];
 
 	data = data['data'].splice(1,data['data'].length);
-	for (i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length - 1; i++) {
 		generation = data[i];
-		modelId = generation[0];
+		modelId = generation[0].toString();
 		generationId = generation[1];
 
-		modelIndex = getModelById(modelId);
+		modelIndex = getModelById(models, modelId);
 		models[modelIndex].appendGeneration(generationId);
 	}
 }
@@ -323,7 +323,7 @@ function clearOptions(selectorElement) {
 		lastIndex = 2;
 	}
 	selector = document.getElementById(selectorElement);
-	for (i = selector.options.length - lastIndex; i > 0; i--) {
+	for (let i = selector.options.length - lastIndex; i > 0; i--) {
 		selector.removeChild(selector.options[i]);
 	}
 }
@@ -333,7 +333,7 @@ function loadModels() {
 	clearOptions(modelSelectorId);
 	let modelSelector = document.getElementById(modelSelectorId);
 
-	for (i = 0; i < models.length; i++) {
+	for (let i = 0; i < models.length; i++) {
 		m = models[i];
 		let option = document.createElement("option");
 		option.value = m.id;
@@ -349,9 +349,9 @@ function loadGenerations() {
 	generationSelector = document.getElementById('select-ed49');
 	selectedModel = modelSelector.options[modelSelector.selectedIndex].text;
 
-	generations = models[getModelById(modelId.toString())].generations;
+	generations = models[getModelById(models, modelId.toString())].generations;
 
-	for (i = 0; i < generations.length; i++) {
+	for (let i = 0; i < generations.length; i++) {
 		generation = generations[i].toString();
 		let option = document.createElement("option");
 		option.value = generation;

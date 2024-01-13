@@ -1,2 +1,8 @@
 model,generation,key,path
+2,0,gen0.csv,models\model_2\racing_data\gen0.csv
+2,1,gen1.csv,models\model_2\racing_data\gen1.csv
+2,2,gen2.csv,models\model_2\racing_data\gen2.csv
+2,3,gen3.csv,models\model_2\racing_data\gen3.csv
+3,0,gen0.csv,models\model_3\racing_data\gen0.csv
+3,1,gen1.csv,models\model_3\racing_data\gen1.csv
 70,33,gen33.csv,models\model_70\racing_data\gen33.csv
