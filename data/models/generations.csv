@@ -1,2 +1,2 @@
-model,generation
-70,33
+model,generation,key,path
+70,33,gen33.csv,models\model_70\racing_data\gen33.csv
