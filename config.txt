@@ -1,19 +1,19 @@
 [NEAT]
-fitness_criterion     = max
+fitness_criterion     = mean
 fitness_threshold     = 100000
 pop_size              = 30
 reset_on_extinction   = False
 
 [DefaultGenome]
 # node activation options
-activation_default      = sigmoid
-activation_mutate_rate  = 0.05
-activation_options      = sigmoid tanh relu
+activation_default      = random
+activation_mutate_rate  = 0.15
+activation_options      = sigmoid tanh relu gauss relu softplus log
 
 # node aggregation options
-aggregation_default     = sum
-aggregation_mutate_rate = 0.01
-aggregation_options     = sum
+aggregation_default     = random
+aggregation_mutate_rate = 0.10
+aggregation_options     = sum min max mean median
 
 # node bias options
 bias_init_mean          = 0.0
@@ -29,8 +29,8 @@ compatibility_disjoint_coefficient = 1.0
 compatibility_weight_coefficient   = 0.5
 
 # connection add/remove rates
-conn_add_prob           = 0.5
-conn_delete_prob        = 0.5
+conn_add_prob           = 0.4
+conn_delete_prob        = 0.25
 
 # connection enable options
 enabled_default         = True
@@ -40,7 +40,7 @@ feed_forward            = True
 initial_connection      = full_nodirect
 
 # node add/remove rates
-node_add_prob           = 0.6
+node_add_prob           = 0.4
 node_delete_prob        = 0.3
 
 # network parameters
@@ -70,10 +70,11 @@ weight_replace_rate     = 0.1
 compatibility_threshold = 2.0
 
 [DefaultStagnation]
-species_fitness_func = max
-max_stagnation       = 20
+species_fitness_func = mean
+max_stagnation       = 5
 species_elitism      = 2
 
 [DefaultReproduction]
-elitism            = 3
-survival_threshold = 0.2
+elitism            = 2
+survival_threshold = 0.4
+min_species_size = 3

@@ -29,13 +29,15 @@ class Simulation:
         self.generation_font = pygame.font.SysFont('Arial', 30)
         self.alive_font = pygame.font.SysFont('Arial', 20)
 
-        self.screen = pygame.display.set_mode((self.circuit.get_image_size()), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((self.circuit.get_image_size()), pygame.RESIZABLE)
         self.game_map = pygame.image.load(self.circuit.file).convert()
         self.circuit_prop = self.circuit.get_prop()
         self.circuit_start_position = self.circuit.start_position
         for i,g in enumerate(self.circuit.goals):
             g.draw_goal(self.game_map)
             self.circuit.goals[i] = g
+            
+        self.goal_limit = 3 * len(self.circuit.goals)
 
         self.cars = cars
         self.nets = nets
@@ -81,7 +83,7 @@ class Simulation:
         still_alive = 0
         for i, car in enumerate(self.cars):
             if car.is_alive():
-                if car.last_time_crossed < self.tick_limit:
+                if car.last_time_crossed < self.tick_limit and car.goals_crossed <= self.goal_limit:
                     output = self.nets[i].activate(car.get_data())
                     still_alive += 1
                     car.update(self.game_map, output)
@@ -251,7 +253,7 @@ class Model:
             self.run(genome, config)
 
 if __name__ == "__main__":
-    GENERATIONS = 100 # PARAMETRIZE
+    GENERATIONS = 200 # PARAMETRIZE
     CHECKPOINT = 5 # PARAMETRIZE
     MODEL_N = 36 # PARAMETRIZE
     LOAD_CHECKPOINT = 14 # PARAMETRIZE
@@ -261,10 +263,15 @@ if __name__ == "__main__":
     #EXECUTION = 'deploy' # PARAMETRIZE
 
     circuits = [
+        Circuit('albert_park', 'png'),
+        #Circuit('baku', 'png'), # no
+        #Circuit('catalunya', 'png'),
+        #Circuit('hungaroring', 'png'), # NO
+        #Circuit('losail', 'png'),
+        Circuit('red_bull_ring', 'png'),
         Circuit('silverstone', 'png'),
-        #Circuit('albert_park', 'png'),
-        #Circuit('sochi', 'png')
+        Circuit('sochi', 'png'),
     ]
 
-    m = Model(circuits, 2, 0)
+    m = Model(circuits, 10, 0)
     m.execute(EXECUTION, MODEL_N, LOAD_CHECKPOINT, GENERATIONS, CHECKPOINT)

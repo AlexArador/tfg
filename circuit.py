@@ -169,7 +169,7 @@ class Circuit:
     def get_circuits():
         data_path = 'data'
 
-        circuit_images = os.listdir(os.path.join(data_path, 'circuits', 'real'))
+        circuit_images = os.listdir(os.path.join(data_path, 'circuits', 'images'))
         available_circuits = [c[:c.find('.')] for c in circuit_images]
 
         df_circuits = pd.read_csv(os.path.join(data_path, 'raw', 'circuits.csv'))

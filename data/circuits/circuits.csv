@@ -1,29 +1,9 @@
 circuitId,circuitRef,name,location,country,lat,lng,length
 1,albert_park,Albert Park Grand Prix Circuit,Melbourne,Australia,-37.8497,144.968,5278
-3,bahrain,Bahrain International Circuit,Sakhir,Bahrain,26.0325,50.5106,5412
 4,catalunya,Circuit de Barcelona-Catalunya,Montmeló,Spain,41.57,2.26111,4657
-5,istanbul,Istanbul Park,Istanbul,Turkey,40.9517,29.405,5338
-6,monaco,Circuit de Monaco,Monte-Carlo,Monaco,43.7347,7.42056,3337
-7,villeneuve,Circuit Gilles Villeneuve,Montreal,Canada,45.5,-73.5228,4361
 9,silverstone,Silverstone Circuit,Silverstone,UK,52.0786,-1.01694,5891
 11,hungaroring,Hungaroring,Budapest,Hungary,47.5789,19.2486,4381
-13,spa,Circuit de Spa-Francorchamps,Spa,Belgium,50.4372,5.97139,7004
-14,monza,Autodromo Nazionale di Monza,Monza,Italy,45.6156,9.28111,5793
-15,marina_bay,Marina Bay Street Circuit,Marina Bay,Singapore,1.2914,103.864,4940
-17,shanghai,Shanghai International Circuit,Shanghai,China,31.3389,121.22,5451
-18,interlagos,Autódromo José Carlos Pace,São Paulo,Brazil,-23.7036,-46.6997,4309
-21,imola,Autodromo Enzo e Dino Ferrari,Imola,Italy,44.3439,11.7167,4909
-22,suzuka,Suzuka Circuit,Suzuka,Japan,34.8431,136.541,5807
-24,yas_marina,Yas Marina Circuit,Abu Dhabi,UAE,24.4672,54.6031,5281
-32,rodriguez,Autódromo Hermanos Rodríguez,Mexico City,Mexico,19.4042,-99.0907,4304
-34,ricard,Circuit Paul Ricard,Le Castellet,France,43.2506,5.79167,5842
-39,zandvoort,Circuit Park Zandvoort,Zandvoort,Netherlands,52.3888,4.54092,4259
-44,las_vegas,Las Vegas Street Circuit,Nevada,USA,36.1162,-115.174,6201
-69,americas,Circuit of the Americas,Austin,USA,30.1328,-97.6411,5513
 70,red_bull_ring,Red Bull Ring,Spielberg,Austria,47.2197,14.7647,4318
 71,sochi,Sochi Autodrom,Sochi,Russia,43.4057,39.9578,5848
 73,baku,Baku City Circuit,Baku,Azerbaijan,40.3725,49.8533,6003
-75,portimao,Autódromo Internacional do Algarve,Portimão,Portugal,37.227,-8.6267,4653
-76,mugello,Autodromo Internazionale del Mugello,Mugello,Italy,43.9975,11.3719,5245
 78,losail,Losail International Circuit,Al Daayen,Qatar,25.49,51.4542,5419
-79,miami,Miami International Autodrome,Miami,USA,25.9581,-80.2389,5412

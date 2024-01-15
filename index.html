@@ -91,7 +91,7 @@
                 <td class="u-custom-font u-font-arial u-table-cell" id="goalsCrossed"></td>
               </tr>
               <tr style="height: 46px;" id="projectedLapTimeRow">
-                <td class="u-custom-font u-font-arial u-table-cell u-table-cell-5">Tiempo por vuelta esperado:</td>
+                <td class="u-custom-font u-font-arial u-table-cell u-table-cell-5" id="projectedLapTimeLabel">Tiempo por vuelta esperado:</td>
                 <td class="u-custom-font u-font-arial u-table-cell" id="projectedLapTime"></td>
               </tr>
             </tbody>
@@ -150,6 +150,7 @@
     let generationSelector = document.getElementById('select-ed49');
     let carSelector = document.getElementById('select-9d97');
     let circuitData = document.getElementById('circuitData');
+    let racingLineDiv = document.getElementById('racingLineDiv');
 
     let generationDiv = document.getElementById('generationDiv');
     let carDiv = document.getElementById('carDiv');
@@ -158,6 +159,7 @@
     dataTable.style.display = 'none';
     dataTableTitle.style.display = 'none';
     circuitData.style.display = 'none';
+    racingLineDiv.style.display = 'none';
 
     selectedModel = modelSelector.selectedIndex;
     selectedGeneration = generationSelector.selectedIndex;
@@ -170,6 +172,7 @@
       generationDiv.style.display = 'block';
       if (selectedGeneration == 0) {
         carDiv.style.display = 'none';
+        //racingLineDiv.style.display = 'none';
       } else {
         carDiv.style.display = 'block';
         if (carSelector.options.length == 2) {
@@ -182,6 +185,12 @@
   }
 
   function selectCar() {
+    let modelSelector = document.getElementById('select-f235');
+    let selectedModel = modelSelector[modelSelector.selectedIndex].value.toString();
+
+    let generationSelector = document.getElementById('select-ed49');
+    let selectedGeneration = generationSelector[generationSelector.selectedIndex].value.toString();
+
     let carSelector = document.getElementById('select-9d97');
     let selectedCar = carSelector.selectedIndex;
     selectedCar = carSelector[selectedCar].value.toString();
@@ -196,7 +205,10 @@
     dataTableTitle.style.display = 'block';
 
     let circuitData = document.getElementById('circuitData');
+    let racingLineDiv = document.getElementById('racingLineDiv');
+
     circuitData.style.display = 'block';
+    racingLineDiv.style.display = 'block';
   }
 
   checkSelectors();

@@ -10,7 +10,7 @@ def get_image_size(self):
         with Image.open(self.file) as img:
             return img.size
         
-circuit = os.path.join('data', 'circuits', 'images', 'sochi.png')
+circuit = os.path.join('data', 'circuits', 'images', 'red_bull_ring.png')
 
 with Image.open(circuit) as img:
     ANCHO, ALTO = img.size
@@ -33,10 +33,13 @@ while ejecutando:
         if evento.type == pygame.QUIT:
             ejecutando = False
         elif evento.type == pygame.MOUSEBUTTONDOWN:
-            # Obtener la posición del clic
-            print(f'Down: {pygame.mouse.get_pos()}')
+            if pygame.MOUSEBUTTONDOWN == 3:
+                print('DELETE PREVIOUS GOAL')
+            else:
+                print(f'Down: {pygame.mouse.get_pos()}')
         elif evento.type == pygame.MOUSEBUTTONUP:
-            print(f'Up: {pygame.mouse.get_pos()}')
+            if pygame.MOUSEBUTTONUP != 3:
+                print(f'Up: {pygame.mouse.get_pos()}')
     # Mostrar la imagen en la pantalla
     pantalla.blit(imagen, (0, 0))
 

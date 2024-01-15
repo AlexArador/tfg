@@ -76,7 +76,7 @@ def export_races():
     
     df.to_csv(os.path.join(BASE_PATH, FILE_NAME), header=True, index=False)
 
-#generate_report()
+generate_report()
 Circuit.get_laptimes()
 Circuit.get_circuits()
 export_drivers()

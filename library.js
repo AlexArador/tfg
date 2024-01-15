@@ -182,19 +182,16 @@ function printThisRacingLine(csvContent, thisCar) {
 	printTitle('Trazada para el coche nº ' + car);
 
 	const totalGoals = circuits[getCircuitById(circuits, circuit)].circuitGoals;
+	console.log('Goals crossed:', goalsCrossed);
 
-	let hideOrShow = goalsCrossed < totalGoals;
-	hideOrShowRow('goalsCrossedRow', hideOrShow);
-	hideOrShowRow('projectedLapTimeRow', hideOrShow);
+	let lapCompleted = goalsCrossed >= totalGoals;	
 
-	if (hideOrShow) {
-		printGoals(goalsCrossed, totalGoals);
-		let projectedLapTime = "Not determinable";
-		if (goalsCrossed != 0) {
-			projectedLapTime = getProjectedLapTime(time, goalsCrossed, totalGoals);
-		}
-		printProjectedLapTime(projectedLapTime);
+	printGoals(time, goalsCrossed, totalGoals);
+	let projectedLapTime = "Not determinable";
+	if (goalsCrossed != 0) {
+		projectedLapTime = getProjectedLapTime(time, goalsCrossed, totalGoals);
 	}
+	printProjectedLapTime(lapCompleted, projectedLapTime);
 }
 
 function changeCircuitCard(c) {
@@ -281,21 +278,52 @@ function printTime(time) {
 	lapTime.textContent = parseTime(time);
 }
 
-function printGoals(goals, totalGoals) {
+function printGoals(time, goals, totalGoals) {
+	let lapsCompleted = 0;
 	goalsCrossed = document.getElementById('goalsCrossed');
-	goalsCrossed.textContent = parseInt(Math.round(goals)).toString().concat(' de ', totalGoals.toString());
+
+	if (goals >= totalGoals) {
+		lapsCompleted = Math.floor(goals / totalGoals);
+	}
+	if (lapsCompleted != 0) {
+		let lapTime = time / lapsCompleted;
+		lapsCompleted = parseInt(lapsCompleted);
+		goalsCrossed.textContent = lapsCompleted.toString() + ' vueltas completadas';
+	} else {
+		goalsCrossed.textContent = parseInt(Math.round(goals)).toString().concat(' de ', totalGoals.toString());
+	}
 }
 
 function getProjectedLapTime(time, goals, totalGoals) {
-	return time * totalGoals / goals;
+	var lapsCompleted = 0;
+	
+	if (goals >= totalGoals) {
+		lapsCompleted = Math.floor(goals / totalGoals);
+	}
+
+	if (lapsCompleted == 0) {
+		return time * totalGoals / goals;
+	} else {
+		return time / lapsCompleted;
+	}
 }
 
-function printProjectedLapTime(time) {
-	projectedLapTimeDOM = document.getElementById('projectedLapTime');
+function printProjectedLapTime(lapCompleted, time) {
+	let projectedLapTime = document.getElementById('projectedLapTime');
+	let projectedLapTimeLabel = document.getElementById('projectedLapTimeLabel');
+
+	var text = 'Tiempo por vuelta esperado';
+
 	if (time != "Not determinable") {
-		time = parseTime(time)
+		time = parseTime(time);
 	}
-	projectedLapTimeDOM.textContent = time;
+
+	if (lapCompleted) {
+		text = 'Tiempo por vuelta';
+	}
+
+	projectedLapTime.textContent = time;
+	projectedLapTimeLabel.textContent = text;
 }
 
 async function readCsvContent(fileName, justLoad) {
@@ -389,7 +417,6 @@ function parseGenerationsCsv(csvContent) {
 		generationId = generation[1];
 
 		modelIndex = getModelById(models, modelId);
-		console.log('MODEL: ' + modelIndex + '. GENERATIONS: ' + generationId);
 		models[modelIndex].appendGeneration(generationId);
 	}
 }
@@ -401,7 +428,6 @@ function clearOptions(selectorElement) {
 	}
 	selector = document.getElementById(selectorElement);
 	for (let i = selector.options.length - lastIndex; i > 0; i--) {
-		console.log('REMOVE CHILD:', selector.options[i]);
 		selector.removeChild(selector.options[lastIndex]);
 	}
 	selector.options[0].selected = 'selected';
