@@ -14,19 +14,14 @@
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="./classes.js"></script>
     <script src="./library.js"></script>
-    <link rel="icon" href="images/blue_heart1.png">
+    <link rel="icon" href="img/logo_uoc.jpg">
     <link id="u-theme-google-font" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i|Open+Sans:300,300i,400,400i,500,500i,600,600i,700,700i,800,800i">
-    
-    
-    
-    
-    
     
     <script type="application/ld+json">{
 		"@context": "http://schema.org",
 		"@type": "Organization",
 		"name": "Site1",
-		"logo": "images/blue_heart1.png?rand=0d78"
+		"logo": "img/logo_uoc.jpg?rand=0d78"
 }</script>
     <meta name="theme-color" content="#478ac9">
     <meta property="og:title" content="Página 1">
@@ -109,17 +104,19 @@
     </section>
     <section class="u-clearfix u-section-4" id="sec-0534">
       <div class="u-clearfix u-sheet u-sheet-1">
-        <div class="u-container-style u-grey-5 u-group u-shape-rectangle u-group-1">
+        <div class="u-container-style u-grey-5 u-group u-shape-rectangle u-group-1" id="circuitData">
           <div class="u-container-layout u-container-layout-1">
             <h3 class="u-align-center u-text u-text-1" id="cardCircuitName">CIRCUIT NAME</h3>
             <p class="u-align-left u-text u-text-2" id="cardCircuitLocation">PAÍS</p>
             <p class="u-align-center u-text u-text-default u-text-3">Longitud:</p>
             <p class="u-align-right u-text u-text-4" id="cardCircuitLength">mmmmm</p>
             <p class="u-align-right u-text u-text-default u-text-5">Vuelta más rápida:</p>
-            <p class="u-align-right u-text u-text-6" id="cardCircuitFastestLap">mm:ss.fff</p>
+            <p class="u-align-right u-text u-text-6" style="font-size:14px;" id="cardCircuitFastestLap">mm:ss.fff</p>
             <p class="u-align-left u-text u-text-7" id="cardCircuitFastestDriver">FASTEST DRIVER</p>
             <p class="u-align-left u-text u-text-default u-text-8" id="cardCircuitFastestDate">YYYY-MM-DD</p>
-            <img class="u-image u-image-contain u-image-default u-image-1" src="images/logo_uoc.jpg" alt="" data-image-width="221" data-image-height="317" id="cardCircuitFastestDriverPic">
+            <!--<img class="u-image u-image-contain u-image-default u-image-1" src="images/logo_uoc.jpg" alt="" data-image-width="221" data-image-height="317" id="cardCircuitFastestDriverPic">-->
+            <img class="u-image u-image-contain u-image-default u-image-1" src="img/default.jpeg" alt="" data-image-width="221" data-image-height="317" id="cardCircuitFastestDriverPic">
+              
             <p class="u-align-center u-text u-text-default u-text-9" id="cardCircuitFastestDriverInfo">NN - CODE<span style="font-weight: 700;"></span>
             </p>
           </div>
@@ -135,6 +132,9 @@
 <script>
   var circuits = [];
   var models = [];
+  var drivers = [];
+  var times = [];
+  var races = [];
 
   /*
     * Cargar diferentes resultados
@@ -149,6 +149,7 @@
     let modelSelector = document.getElementById('select-f235');
     let generationSelector = document.getElementById('select-ed49');
     let carSelector = document.getElementById('select-9d97');
+    let circuitData = document.getElementById('circuitData');
 
     let generationDiv = document.getElementById('generationDiv');
     let carDiv = document.getElementById('carDiv');
@@ -156,6 +157,7 @@
     let dataTableTitle = document.getElementById('variablesCanvasTitle');
     dataTable.style.display = 'none';
     dataTableTitle.style.display = 'none';
+    circuitData.style.display = 'none';
 
     selectedModel = modelSelector.selectedIndex;
     selectedGeneration = generationSelector.selectedIndex;
@@ -192,12 +194,19 @@
     let dataTableTitle = document.getElementById('variablesCanvasTitle');
     dataTable.style.display = 'block';
     dataTableTitle.style.display = 'block';
+
+    let circuitData = document.getElementById('circuitData');
+    circuitData.style.display = 'block';
   }
 
   checkSelectors();
 
     readCsvContent('data/circuits/circuits.csv', null);
     readCsvContent('data/circuits/circuits.json', null);
+    readCsvContent('data/drivers.csv', null);
+    readCsvContent('data/races.csv', null);
+    readCsvContent('data/circuits/times.csv', null);
+
     readCsvContent('data/models/models.csv', null);
     readCsvContent('data/models/generations.csv', null);
 

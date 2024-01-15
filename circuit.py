@@ -178,7 +178,7 @@ class Circuit:
         print(f'Available circuits: {len(df_circuits)}')
         print(f'Available images: {len(circuit_images)}')
 
-        df_circuits = df_circuits[['circuitId', 'circuitRef', 'name', 'country', 'lat', 'lng']]
+        df_circuits = df_circuits[['circuitId', 'circuitRef', 'name', 'location', 'country', 'lat', 'lng', 'length']]
         circuits_file = os.path.join(data_path, 'circuits', 'circuits.csv')
         df_circuits.to_csv(circuits_file, index=False, header=True)
 
@@ -203,12 +203,23 @@ class Circuit:
         df_races = df_races[['raceId', 'circuitId']]
         df = pd.merge(df_quali, df_races, how='inner', on='raceId')
 
-        q1 = df[['circuitId', 'q1']].rename(columns={'q1': 'time'})
-        q2 = df[['circuitId', 'q2']].rename(columns={'q2': 'time'})
-        q3 = df[['circuitId', 'q3']].rename(columns={'q3': 'time'})
+        q1 = df[['qualifyId', 'raceId', 'circuitId', 'driverId', 'q1']].rename(columns={'q1': 'time'})
+        q2 = df[['qualifyId', 'raceId', 'circuitId', 'driverId', 'q2']].rename(columns={'q2': 'time'})
+        q3 = df[['qualifyId', 'raceId', 'circuitId', 'driverId', 'q3']].rename(columns={'q3': 'time'})
 
         qt = pd.concat([q1, q2, q3], ignore_index=True)
         qt = qt[~qt['time'].isna()]
 
-        df.to_csv(os.path.join(data_path, 'circuits', 'qualifying.csv'), header=True, index=False)
+        qt['row_id'] = qt.sort_values(['time'], ascending=[True]).groupby(['circuitId']).cumcount() + 1
+        qt_best = qt[qt['row_id'] == 1]
+        qt_best['timing'] = ['BEST'] * len(qt_best)
+
+        qt['row_id'] = qt.sort_values(['time'], ascending=[False]).groupby(['circuitId']).cumcount() + 1
+        qt_worst = qt[qt['row_id'] == 1]
+        qt_worst['timing'] = ['WORST'] * len(qt_worst)
+
+        qt = pd.concat([qt_best, qt_worst])
+        qt = qt.drop(columns=['row_id'])
+
         qt.to_csv(os.path.join(data_path, 'circuits', 'times.csv'), header=True, index=False)
+        df.to_csv(os.path.join(data_path, 'circuits', 'qualifying.csv'), header=True, index=False)

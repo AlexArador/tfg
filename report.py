@@ -1,5 +1,9 @@
 import os
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+
+from circuit import Circuit
 
 def generate_report():
     BASE_PATH = 'models'
@@ -26,5 +30,54 @@ def generate_report():
 
     df_models.to_csv(os.path.join(OUTPUT_PATH, 'models.csv'), index=False, header=True)
     df_generations.to_csv(os.path.join(OUTPUT_PATH, 'generations.csv'), index=False, header=True)
+    
+def get_driver_pic(url):
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        html_content = response.content
+        soup = BeautifulSoup(html_content, 'html.parser')
+        obj = soup.find(class_='infobox')
 
-generate_report()
+        if obj:
+            first_image = obj.find('img')
+            if first_image:
+                return first_image['src']
+            else:
+                print(f'No image found within the object for URL {url}')
+        else:
+            print(f'No object found with the provided class for URL {url}')
+    else:
+        print(f'Error processing the request to the provided URL: {url}')
+
+def export_drivers():
+    BASE_PATH = 'data'
+    FILE_NAME = 'drivers.csv'
+    df = pd.read_csv(os.path.join(BASE_PATH, 'raw', FILE_NAME))
+    
+    drivers_list = list(set(pd.read_csv(os.path.join('data', 'circuits', 'times.csv'))['driverId'].tolist()))
+    df = df[df['driverId'].isin(drivers_list)]
+
+    df['name'] = df.apply(lambda x: x['forename'] + ' ' + x['surname'], axis=1)
+    df['picture'] = df['url'].apply(lambda x: get_driver_pic(x))
+
+    df = df[['driverId', 'code', 'number', 'name', 'picture']]
+
+    df.to_csv(os.path.join(BASE_PATH, FILE_NAME), index=False, header=True)
+
+    print(df.head())
+    
+def export_races():
+    BASE_PATH = 'data'
+    FILE_NAME = 'races.csv'
+    
+    df = pd.read_csv(os.path.join(BASE_PATH, 'raw', FILE_NAME))
+    df = df[['raceId', 'circuitId', 'date']]
+    
+    df.to_csv(os.path.join(BASE_PATH, FILE_NAME), header=True, index=False)
+
+#generate_report()
+Circuit.get_laptimes()
+Circuit.get_circuits()
+export_drivers()
+export_races()

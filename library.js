@@ -30,7 +30,7 @@ function parseModelsCsv(csvContent) {
 	data = data['data'].splice(1,data['data'].length);
 
 	for (let i = 0; i < data.length - 1; i++) {
-		models.push(new Model(data[i][0]));
+		models.push(new Model(data[i][0].toString()));
 	}
 }
 
@@ -41,8 +41,8 @@ function parseCircuits(csvContent) {
 	data = data['data'].splice(1,data['data'].length);
 
 	for (let i = 0; i < data.length; i++) {
-		c = data[i]
-		circuits.push(new Circuit(c[0], c[1], c[2], c[3], c[4], c[5], c[6]));
+		c = data[i];
+		circuits.push(new Circuit(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]));
 	}
 }
 
@@ -105,7 +105,7 @@ function loadCars(cars) {
 function printThisRacingLine(csvContent, thisCar) {
 	let data = Papa.parse(csvContent);
 	headers = data['data'][0];
-	console.log(headers); // GAZAPO. EL ORDEN Cambiará de contenido en siguientes ejecuciones del modelo
+	console.log(headers);
 
 	data = data['data'].splice(1,data['data'].length);
 	data = data.splice(0,data.length - 1);
@@ -118,8 +118,8 @@ function printThisRacingLine(csvContent, thisCar) {
 	for (let i = 0; i < data.length; i++) {
 		let d = data[i];
 		cars.push(d[0]);
-		racingCircuits.push(d[1]);
-		times.push(d[2]);
+		racingCircuits.push(d[2]);
+		times.push(d[1]);
 		goalsCrossed.push(d[3]);
 		racingLines.push(d[4]);
 	}
@@ -148,6 +148,8 @@ function printThisRacingLine(csvContent, thisCar) {
 	goalsCrossed = goalsCrossed[longestDataPointsIndex];
 
 	let c = circuits[getCircuitById(circuits, circuit)];
+	console.log('CIRCUIT');
+	console.log(c);
 	url = 'data/circuits/images/' + c.circuitRef + '.png';
 	const scale = changeImage(url);
 	changeCircuitCard(c);
@@ -179,7 +181,7 @@ function printThisRacingLine(csvContent, thisCar) {
 	printTime(time);
 	printTitle('Trazada para el coche nº ' + car);
 
-	const totalGoals = circuits[getCircuitById(getCircuitById, circuit)].circuitGoals;
+	const totalGoals = circuits[getCircuitById(circuits, circuit)].circuitGoals;
 
 	let hideOrShow = goalsCrossed < totalGoals;
 	hideOrShowRow('goalsCrossedRow', hideOrShow);
@@ -198,12 +200,44 @@ function printThisRacingLine(csvContent, thisCar) {
 function changeCircuitCard(c) {
 	console.log('CIRCUIT:');
 	console.log(c);
+
+	let cardCircuitName = document.getElementById('cardCircuitName');
+	cardCircuitName.textContent = c.name;
+
+	let cardCircuitLocation = document.getElementById('cardCircuitLocation');
+	cardCircuitLocation.textContent = c.location + ' (' + c.country + ')';
+
+	let cardCircuitLength = document.getElementById('cardCircuitLength');
+	cardCircuitLength.textContent = c.length.toLocaleString() + 'm';
+
+	let t = times[getTimeForCircuit(times, c.circuitId, 'BEST')];
+
+	let cardCircuitFastestLap = document.getElementById('cardCircuitFastestLap');
+	cardCircuitFastestLap.textContent = t.time;
+
+	let driver = drivers[getDriverById(drivers, t.driverId)];
+
+	cardCircuitFastestDriver = document.getElementById('cardCircuitFastestDriver');
+	cardCircuitFastestDriver.textContent = driver['name'];
+
+	cardCircuitFastestDriverPic = document.getElementById('cardCircuitFastestDriverPic');
+	cardCircuitFastestDriverPic.src = driver['picture'];
+
+	cardCircuitFastestDriverInfo = document.getElementById('cardCircuitFastestDriverInfo');
+	cardCircuitFastestDriverInfo.textContent = driver['number'] + ' - ' + driver['code'];
+
+	console.log(races[0]);
+
+	let r = races[getRaceById(races, t['raceId'].toString())];
+
+	cardCircuitFastestDate = document.getElementById('cardCircuitFastestDate');
+	cardCircuitFastestDate.textContent = r['date'];
 }
 
 function parseCarsContent(csvContent) {
 	let data = Papa.parse(csvContent);
 	headers = data['data'][0];
-	console.log(headers); // GAZAPO. EL ORDEN Cambiará de contenido en siguientes ejecuciones del modelo
+	console.log(headers);
 
 	data = data['data'].splice(1,data['data'].length);
 	data = data.splice(0,data.length - 1);
@@ -284,6 +318,15 @@ async function readCsvContent(fileName, justLoad) {
 	    		case 'data/models/generations.csv':
 	    			parseGenerationsCsv(content);
 	    			break;
+	    		case 'data/drivers.csv':
+	    			parseDriversCsv(content);
+	    			break;
+	    		case 'data/circuits/times.csv':
+	    			parseTimesCsv(content);
+	    			break;
+	    		case 'data/races.csv':
+	    			parseRacesCsv(content);
+	    			break;
 	    		default:
 	    			if (justLoad == null) {
 	    				parseCarsContent(content);
@@ -302,6 +345,39 @@ async function readCsvContent(fileName, justLoad) {
     }
 }
 
+function parseRacesCsv(csvContent) {
+	let data = Papa.parse(csvContent);
+	headers = data['data'][0];
+
+	data = data['data'].splice(1,data['data'].length);
+	for (let i = 0; i < data.length - 1; i++) {
+		race = data[i];
+		races.push(new Race(race[0], race[1], race[2]));
+	}
+}
+
+function parseDriversCsv(csvContent) {
+	let data = Papa.parse(csvContent);
+	headers = data['data'][0];
+
+	data = data['data'].splice(1,data['data'].length);
+	for (let i = 0; i < data.length - 1; i++) {
+		driver = data[i];
+		drivers.push(new Driver(driver[0], driver[1], driver[2], driver[3], driver[4]));
+	}
+}
+
+function parseTimesCsv(csvContent) {
+	let data = Papa.parse(csvContent);
+	headers = data['data'][0];
+
+	data = data['data'].splice(1,data['data'].length);
+	for (let i = 0; i < data.length - 1; i++) {
+		time = data[i];
+		times.push(new Time(time[0], time[1], time[2].toString(), time[3], time[4].slice(0, -3), time[5]));
+	}
+}
+
 function parseGenerationsCsv(csvContent) {
 	let data = Papa.parse(csvContent);
 	headers = data['data'][0];
@@ -313,6 +389,7 @@ function parseGenerationsCsv(csvContent) {
 		generationId = generation[1];
 
 		modelIndex = getModelById(models, modelId);
+		console.log('MODEL: ' + modelIndex + '. GENERATIONS: ' + generationId);
 		models[modelIndex].appendGeneration(generationId);
 	}
 }
@@ -324,8 +401,10 @@ function clearOptions(selectorElement) {
 	}
 	selector = document.getElementById(selectorElement);
 	for (let i = selector.options.length - lastIndex; i > 0; i--) {
-		selector.removeChild(selector.options[i]);
+		console.log('REMOVE CHILD:', selector.options[i]);
+		selector.removeChild(selector.options[lastIndex]);
 	}
+	selector.options[0].selected = 'selected';
 }
 
 function loadModels() {
@@ -345,11 +424,11 @@ function loadModels() {
 function loadGenerations() {
 	clearOptions('select-ed49');
 
-	modelSelector = document.getElementById('select-f235');
-	generationSelector = document.getElementById('select-ed49');
-	selectedModel = modelSelector.options[modelSelector.selectedIndex].text;
+	let modelSelector = document.getElementById('select-f235');
+	let generationSelector = document.getElementById('select-ed49');
+	let selectedModel = modelSelector.options[modelSelector.selectedIndex].text;
 
-	generations = models[getModelById(models, modelId.toString())].generations;
+	let generations = models[getModelById(models, selectedModel)].generations;
 
 	for (let i = 0; i < generations.length; i++) {
 		generation = generations[i].toString();
