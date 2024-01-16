@@ -34,7 +34,7 @@ class Simulation:
         self.circuit_prop = self.circuit.get_prop()
         self.circuit_start_position = self.circuit.start_position
         for i,g in enumerate(self.circuit.goals):
-            g.draw_goal(self.game_map)
+            #g.draw_goal(self.game_map)
             self.circuit.goals[i] = g
             
         self.goal_limit = 3 * len(self.circuit.goals)
@@ -65,8 +65,8 @@ class Simulation:
                     car.draw(self.screen)
 
             # Display Info
-            self.draw_text(f'Generation: {str(self.current_generation)}', (900, 450))
-            self.draw_text(f'Still Alive: {str(still_alive)}', (900, 490))
+            #self.draw_text(f'Generation: {str(self.current_generation)}', (900, 450))
+            #self.draw_text(f'Still Alive: {str(still_alive)}', (900, 490))
             self.current_time = pygame.time.get_ticks() / 1000
             self.draw_text(f"Tiempo: {RacingLine.convert_time(self.current_time - self.start_time)}", (900, 1000))
 
@@ -207,6 +207,7 @@ class Model:
         return True
 
     def execute(self, execution: str, model_n: int = 1, load_checkpoint: int = None, generations: int = 150, checkpoint: int = 10):
+        print(f'Requested: {execution}. Validating execution for model: {model_n}. Requested checkpoint: {load_checkpoint}')
         self.validate_execution(execution, model_n, load_checkpoint)
 
         config = neat.config.Config(neat.DefaultGenome,
@@ -245,6 +246,7 @@ class Model:
         elif execution == 'deploy':
             folder_name = f'model_{str(model_n)}'
             genome_file = os.path.join(self.MODEL_PATH, folder_name, 'genome.pkl')
+            self.model_n = model_n
 
             # Cargar el genoma desde el archivo
             with open(genome_file, 'rb') as f:
@@ -255,22 +257,22 @@ class Model:
 if __name__ == "__main__":
     GENERATIONS = 200 # PARAMETRIZE
     CHECKPOINT = 5 # PARAMETRIZE
-    MODEL_N = 36 # PARAMETRIZE
-    LOAD_CHECKPOINT = 14 # PARAMETRIZE
+    MODEL_N = 2 # PARAMETRIZE
+    LOAD_CHECKPOINT = 64 # PARAMETRIZE
 
     EXECUTION = 'new' # PARAMETRIZE
     #EXECUTION = 'restore' # PARAMETRIZE
-    #EXECUTION = 'deploy' # PARAMETRIZE
+    EXECUTION = 'deploy' # PARAMETRIZE
 
     circuits = [
-        Circuit('albert_park', 'png'),
+        #Circuit('albert_park', 'png'),
         #Circuit('baku', 'png'), # no
         #Circuit('catalunya', 'png'),
         #Circuit('hungaroring', 'png'), # NO
         #Circuit('losail', 'png'),
-        Circuit('red_bull_ring', 'png'),
+        #Circuit('red_bull_ring', 'png'),
         Circuit('silverstone', 'png'),
-        Circuit('sochi', 'png'),
+        #Circuit('sochi', 'png'),
     ]
 
     m = Model(circuits, 10, 0)
